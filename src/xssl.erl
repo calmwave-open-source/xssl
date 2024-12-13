@@ -3027,21 +3027,21 @@ rsa_pss_rsae_sha512,rsa_pss_rsae_sha384,rsa_pss_rsae_sha256]
 %%--------------------------------------------------------------------
 
 signature_algs(default, 'tlsv1.3') ->
-    xtls_v1:default_signature_algs([tls_record:protocol_version_name('tlsv1.3'), 
+    xtls_v1:default_signature_algs([xtls_record:protocol_version_name('tlsv1.3'), 
                                    xtls_record:protocol_version_name('tlsv1.2')]);
 signature_algs(default, 'tlsv1.2') ->
-    xtls_v1:default_signature_algs([tls_record:protocol_version_name('tlsv1.2')]);
+    xtls_v1:default_signature_algs([xtls_record:protocol_version_name('tlsv1.2')]);
 signature_algs(all, 'tlsv1.3') ->
-    xtls_v1:default_signature_algs([tls_record:protocol_version_name('tlsv1.3'),
+    xtls_v1:default_signature_algs([xtls_record:protocol_version_name('tlsv1.3'),
                                    xtls_record:protocol_version_name('tlsv1.2')]) ++
         [ecdsa_sha1, rsa_pkcs1_sha1 | xtls_v1:legacy_signature_algs_pre_13()] -- [{sha, ecdsa}, {sha, rsa}];
 signature_algs(all, 'tlsv1.2') ->
-    xtls_v1:default_signature_algs([tls_record:protocol_version_name('tlsv1.2')]) ++ 
+    xtls_v1:default_signature_algs([xtls_record:protocol_version_name('tlsv1.2')]) ++ 
         xtls_v1:legacy_signature_algs_pre_13();
 signature_algs(exclusive, 'tlsv1.3') ->
-    xtls_v1:default_signature_algs([tls_record:protocol_version_name('tlsv1.3')]);
+    xtls_v1:default_signature_algs([xtls_record:protocol_version_name('tlsv1.3')]);
 signature_algs(exclusive, 'tlsv1.2') ->
-    Algs = xtls_v1:default_signature_algs([tls_record:protocol_version_name('tlsv1.2')]),
+    Algs = xtls_v1:default_signature_algs([xtls_record:protocol_version_name('tlsv1.2')]),
     Algs ++ xtls_v1:legacy_signature_algs_pre_13();
 signature_algs(Description, 'dtlsv1.2') ->
     signature_algs(Description, 'tlsv1.2');
@@ -3385,13 +3385,13 @@ versions() ->
                                  xtls_record:sufficient_crypto_support(Vsn)
                          end,
     DTLSCryptoSupported = fun(Vsn) ->
-                                  xtls_record:sufficient_crypto_support(dtls_v1:corresponding_tls_version(Vsn))
+                                  xtls_record:sufficient_crypto_support(xdtls_v1:corresponding_tls_version(Vsn))
                           end,
-    SupportedTLSVsns = [tls_record:protocol_version(Vsn) || Vsn <- ConfTLSVsns,  TLSCryptoSupported(Vsn)],
-    SupportedDTLSVsns = [dtls_record:protocol_version(Vsn) || Vsn <- ConfDTLSVsns, DTLSCryptoSupported(Vsn)],
+    SupportedTLSVsns = [xtls_record:protocol_version(Vsn) || Vsn <- ConfTLSVsns,  TLSCryptoSupported(Vsn)],
+    SupportedDTLSVsns = [xdtls_record:protocol_version(Vsn) || Vsn <- ConfDTLSVsns, DTLSCryptoSupported(Vsn)],
 
     AvailableTLSVsns = [Vsn || Vsn <- ImplementedTLSVsns, TLSCryptoSupported(xtls_record:protocol_version_name(Vsn))],
-    AvailableDTLSVsns = [Vsn || Vsn <- ImplementedDTLSVsns, DTLSCryptoSupported(dtls_record:protocol_version_name(Vsn))],
+    AvailableDTLSVsns = [Vsn || Vsn <- ImplementedDTLSVsns, DTLSCryptoSupported(xdtls_record:protocol_version_name(Vsn))],
 
     [{ssl_app, ?VSN}, 
      {supported, SupportedTLSVsns}, 
@@ -4605,7 +4605,7 @@ opt_supported_groups(UserOpts, #{versions := TlsVsns} = Opts, _Env) ->
                 _ ->
                     case get_opt_list(eccs, undefined, UserOpts, Opts) of
                         {old, ECCS0} -> ECCS0;
-                        {default, _} -> handle_eccs_option(tls_v1:ec_curves(default, 'tlsv1.2'));
+                        {default, _} -> handle_eccs_option(xtls_v1:ec_curves(default, 'tlsv1.2'));
                         {new, ECCS0} -> handle_eccs_option(ECCS0)
                     end
             catch
