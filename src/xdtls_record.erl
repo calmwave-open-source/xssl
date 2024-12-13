@@ -55,7 +55,7 @@
 
 -export_type([dtls_atom_version/0]).
 
--type dtls_atom_version()  :: xdtlsv1 | 'dtlsv1.2'.
+-type dtls_atom_version()  :: dtlsv1 | 'dtlsv1.2'.
 
 -define(REPLAY_WINDOW_SIZE, 58).  %% No bignums
 
@@ -93,7 +93,7 @@ empty_connection_state(Empty) ->
     Empty#{epoch => undefined, replay_window => init_replay_window()}.
 
 %%--------------------------------------------------------------------
--spec save_current_connection_state(ssl_record:connection_states(), read | write) ->
+-spec save_current_connection_state(xssl_record:connection_states(), read | write) ->
 				      ssl_record:connection_states().
 %%
 %% Description: Returns the instance of the connection_state map
@@ -142,7 +142,7 @@ set_connection_state_by_epoch(ReadState, Epoch, #{saved_read := #{epoch := Epoch
     States#{saved_read := ReadState}.
 
 %%--------------------------------------------------------------------
--spec init_connection_state_seq(ssl_record:ssl_version(), ssl_record:connection_states()) ->
+-spec init_connection_state_seq(xssl_record:ssl_version(), ssl_record:connection_states()) ->
           ssl_record:connection_state().
 %%
 %% Description: Copy the read sequence number to the write sequence number
@@ -156,7 +156,7 @@ init_connection_state_seq(_, ConnnectionStates) ->
     ConnnectionStates.
 
 %%--------------------------------------------------------
--spec current_connection_state_epoch(ssl_record:connection_states(), read | write) ->
+-spec current_connection_state_epoch(xssl_record:connection_states(), read | write) ->
 					    integer().
 %%
 %% Description: Returns the epoch the connection_state record
@@ -208,7 +208,7 @@ encode_alert_record(#alert{level = Level, description = Description},
 		      ConnectionStates).
 
 %%--------------------------------------------------------------------
--spec encode_change_cipher_spec(ssl_record:ssl_version(), integer(), ssl_record:connection_states()) ->
+-spec encode_change_cipher_spec(xssl_record:ssl_version(), integer(), ssl_record:connection_states()) ->
           {[iolist()], ssl_record:connection_states()}.
 %%
 %% Description: Encodes a change_cipher_spec-message to send on the ssl socket.
@@ -274,7 +274,7 @@ protocol_version_name(dtlsv1) ->
     ?DTLS_1_0.
 
 %%--------------------------------------------------------------------
--spec protocol_version(ssl_record:ssl_version()) -> dtls_atom_version().
+-spec protocol_version(xssl_record:ssl_version()) -> dtls_atom_version().
 
 %%
 %% Description: Creates a protocol version record from a version atom
@@ -284,9 +284,9 @@ protocol_version_name(dtlsv1) ->
 protocol_version(?DTLS_1_2) ->
     'dtlsv1.2';
 protocol_version(?DTLS_1_0) ->
-    xdtlsv1.
+    dtlsv1.
 %%--------------------------------------------------------------------
--spec lowest_protocol_version(ssl_record:ssl_version(), ssl_record:ssl_version()) -> ssl_record:ssl_version().
+-spec lowest_protocol_version(xssl_record:ssl_version(), ssl_record:ssl_version()) -> ssl_record:ssl_version().
 %%
 %% Description: Lowes protocol version of two given versions
 %%--------------------------------------------------------------------
@@ -316,7 +316,7 @@ check_protocol_version([], Fun) -> check_protocol_version(supported_protocol_ver
 check_protocol_version([Ver | Versions], Fun) -> lists:foldl(Fun, Ver, Versions).
 
 %%--------------------------------------------------------------------
--spec highest_protocol_version(ssl_record:ssl_version(), ssl_record:ssl_version()) -> ssl_record:ssl_version().
+-spec highest_protocol_version(xssl_record:ssl_version(), ssl_record:ssl_version()) -> ssl_record:ssl_version().
 %%
 %% Description: Highest protocol version of two given versions
 %%--------------------------------------------------------------------
@@ -346,7 +346,7 @@ supported_protocol_versions() ->
     Fun = fun(Version) ->
 		  protocol_version_name(Version)
 	  end,
-    case application:get_env(ssl, xdtls_protocol_version) of
+    case application:get_env(xssl, xdtls_protocol_version) of
 	undefined ->
 	    lists:map(Fun, supported_protocol_versions([]));
 	{ok, []} ->
@@ -381,7 +381,7 @@ supported_protocol_versions([_|_] = Vsns) ->
     end.
 
 %%--------------------------------------------------------------------
--spec is_acceptable_version(ssl_record:ssl_version(), Supported :: [ssl_record:ssl_version()]) -> boolean().
+-spec is_acceptable_version(xssl_record:ssl_version(), Supported :: [ssl_record:ssl_version()]) -> boolean().
 %%
 %% Description: ssl version 2 is not acceptable security risks are too big.
 %%
@@ -389,7 +389,7 @@ supported_protocol_versions([_|_] = Vsns) ->
 is_acceptable_version(Version, Versions) ->
     lists:member(Version, Versions).
 
--spec hello_version(ssl_record:ssl_version(), [ssl_record:ssl_version()]) -> ssl_record:ssl_version().
+-spec hello_version(xssl_record:ssl_version(), [ssl_record:ssl_version()]) -> ssl_record:ssl_version().
 hello_version(Version, Versions) ->
     case xdtls_v1:corresponding_tls_version(Version) of
         TLSVersion when ?TLS_GTE(TLSVersion, ?TLS_1_2) ->

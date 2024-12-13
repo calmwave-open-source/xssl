@@ -295,7 +295,7 @@ get_server_version(Version, Extensions) ->
             Version
     end.
 
--spec version(ssl_record:ssl_version()) -> string().
+-spec version(xssl_record:ssl_version()) -> string().
 version(?TLS_1_3) ->
     "TLS 1.3";
 version(?TLS_1_2) ->

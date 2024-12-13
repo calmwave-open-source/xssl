@@ -238,7 +238,7 @@ start(internal, #client_hello{}, State0) -> %% Missing mandantory TLS-1.3 extens
     %% so it is a previous version hello.
     xssl_gen_statem:handle_own_alert(?ALERT_REC(?FATAL, ?PROTOCOL_VERSION), ?STATE(start), State0);
 start(info, Msg, State) ->
-    xtls_gen_connection:handle_info(Msg, ?STATE(start), State);
+    xtlsxtls_gen_connection:handle_info(Msg, ?STATE(start), State);
 start(Type, Msg, State) ->
     xssl_gen_statem:handle_common_event(Type, Msg, ?STATE(start), State).
 
@@ -437,7 +437,7 @@ do_handle_client_hello(#client_hello{cipher_suites = ClientCiphers,
         Groups = Maybe(tls_handshake_1_3:select_common_groups(ServerGroups, ClientGroups)),
         Maybe(validate_client_key_share(ClientGroups,
                                         ClientShares#key_share_client_hello.client_shares)),
-        CertKeyPairs = ssl_certificate:available_cert_key_pairs(CertKeyAlts, ?TLS_1_3),
+        CertKeyPairs = xssl_certificate:available_cert_key_pairs(CertKeyAlts, ?TLS_1_3),
         #session{own_certificates = [Cert|_]} = Session =
             Maybe(select_server_cert_key_pair(Session0, CertKeyPairs, ClientSignAlgs,
                                               ClientSignAlgsCert, CertAuths, State0,
@@ -653,7 +653,7 @@ maybe_store_peer_cert(#state{session = Session} = State, PeerCert) ->
     State#state{session = Session#session{peer_certificate = PeerCert}}.
 
 maybe_send_session_ticket(State) ->
-    Number = case application:get_env(ssl, server_session_tickets_amount) of
+    Number = case application:get_env(xssl, server_session_tickets_amount) of
                  {ok, Size} when is_integer(Size) andalso
                                  Size > 0 ->
                      Size;
@@ -713,7 +713,7 @@ select_server_cert_key_pair(Session, [#{private_key := Key, certs := [Cert| _] =
     case xtls_handshake_1_3:check_cert_sign_algo(SignAlgo, SignHash,
                                                 ClientSignAlgs, ClientSignAlgsCert) of
         ok ->
-            case ssl_certificate:handle_cert_auths(Certs, CertAuths, CertDbHandle, CertDbRef) of
+            case xssl_certificate:handle_cert_auths(Certs, CertAuths, CertDbHandle, CertDbRef) of
                 {ok, EncodeChain} -> %% Chain fullfills certificate_authorities extension
                     {ok, Session#session{own_certificates = EncodeChain, private_key = Key}};
                 {error, EncodeChain, not_in_auth_domain} ->

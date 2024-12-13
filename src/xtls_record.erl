@@ -58,7 +58,7 @@
 -export_type([tls_version/0, tls_atom_version/0]).
 
 -type tls_version()       :: ssl_record:ssl_version().
--type tls_atom_version()  :: sslv3 | xtlsv1 | 'tlsv1.1' | 'tlsv1.2' | 'tlsv1.3'.
+-type tls_atom_version()  :: sslv3 | tlsv1 | 'tlsv1.1' | 'tlsv1.2' | 'tlsv1.3'.
 -type xtls_max_frag_len()  :: undefined | 512 | 1024 | 2048 | 4096.
 
 -compile(inline).
@@ -78,7 +78,7 @@
 %% values for the initial SSL connection setup.
 %%--------------------------------------------------------------------
 init_connection_states(Role, Version, BeastMitigation) ->
-    MaxEarlyDataSize = ssl_config:get_max_early_data_size(),
+    MaxEarlyDataSize = xssl_config:get_max_early_data_size(),
     init_connection_states(Role, Version, BeastMitigation, MaxEarlyDataSize).
 %%
 -spec init_connection_states(Role, Version, BeastMitigation,
@@ -283,7 +283,7 @@ protocol_version(?TLS_1_2) ->
 protocol_version(?TLS_1_1) ->
     'tlsv1.1';
 protocol_version(?TLS_1_0) ->
-    xtlsv1;
+    tlsv1;
 protocol_version(?SSL_3_0) ->
     sslv3.
 %%--------------------------------------------------------------------
@@ -346,7 +346,7 @@ supported_protocol_versions() ->
     Fun = fun(Version) ->
 		  protocol_version_name(Version)
 	  end,
-    case application:get_env(ssl, protocol_version) of
+    case application:get_env(xssl, protocol_version) of
 	undefined ->
 	    lists:map(Fun, supported_protocol_versions([]));
 	{ok, []} ->

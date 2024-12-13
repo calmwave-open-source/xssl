@@ -219,7 +219,7 @@ certificate_verify(_HashAlgo, Handshake) ->
     Handshake.
 
 %% TLS 1.2 ---------------------------------------------------
--spec setup_keys(ssl_record:ssl_version(), integer(), binary(), binary(), binary(), integer(),
+-spec setup_keys(xssl_record:ssl_version(), integer(), binary(), binary(), binary(), integer(),
 		 integer(), integer()) -> {binary(), binary(), binary(),
 					  binary(), binary(), binary()}.
 %% TLS v1.0  ---------------------------------------------------
@@ -501,7 +501,7 @@ mac_hash(Method, Mac_write_secret, Seq_num, Type, Version,Length, Fragment) ->
     Mac.
 %% TLS 1.0 -1.2  ---------------------------------------------------
 
--spec suites(ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
+-spec suites(xssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 
 suites(Version) when ?TLS_1_X(Version) ->
     lists:flatmap(fun default_suites/1, suites_in_version(Version)).
@@ -511,7 +511,7 @@ suites_in_version(?TLS_1_1) -> [?TLS_1_0];
 suites_in_version(?TLS_1_2) -> [?TLS_1_2];
 suites_in_version(?TLS_1_3) -> [?TLS_1_3, ?TLS_1_2].
 
--spec exclusive_suites(ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
+-spec exclusive_suites(xssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 
 default_suites(?TLS_1_3 = Version) ->
     exclusive_suites(Version);
@@ -614,7 +614,7 @@ exclusive_suites(?TLS_1_0) ->
      ?TLS_DHE_DSS_WITH_AES_128_CBC_SHA].
 
 %%--------------------------------------------------------------------
--spec exclusive_anonymous_suites(ssl_record:ssl_version()) ->
+-spec exclusive_anonymous_suites(xssl_record:ssl_version()) ->
           [xssl_cipher_format:cipher_suite()].
 %%
 %% Description: Returns a list of the anonymous cipher suites introduced
@@ -675,7 +675,7 @@ cbc_exclusive(?TLS_1_0) ->
     [?TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA].
 
 %%--------------------------------------------------------------------
--spec psk_suites(ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
+-spec psk_suites(xssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 %%
 %% Description: Returns a list of the PSK cipher suites, only supported
 %% if explicitly set by user.
@@ -683,7 +683,7 @@ cbc_exclusive(?TLS_1_0) ->
 psk_suites(Version) when ?TLS_1_X(Version) ->
     psk_exclusive(Version).
 
--spec psk_exclusive(ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
+-spec psk_exclusive(xssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 psk_exclusive(?TLS_1_2) ->
     psk_exclusive(?TLS_1_0) -- [?TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA];
 psk_exclusive(?TLS_1_0) ->
@@ -700,7 +700,7 @@ psk_exclusive(_) ->
     [].
 
 %%--------------------------------------------------------------------
--spec psk_suites_anon(ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
+-spec psk_suites_anon(xssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 %%
 %% Description: Returns a list of the anonymous PSK cipher suites, only supported
 %% if explicitly set by user.
@@ -708,7 +708,7 @@ psk_exclusive(_) ->
 psk_suites_anon(Version) when ?TLS_1_X(Version) ->
     psk_anon_exclusive(?TLS_1_2) ++ psk_anon_exclusive(?TLS_1_0).
 
--spec psk_anon_exclusive(ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
+-spec psk_anon_exclusive(xssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 
 psk_anon_exclusive(?TLS_1_2) ->
     [

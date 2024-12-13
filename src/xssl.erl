@@ -320,25 +320,25 @@ TLS or DTLS protocol version.
 -doc """
 TLS protocol version.
 """.
--type tls_version()              :: 'tlsv1.2' | 'tlsv1.3' | xtls_legacy_version().
+-type tls_version()              :: 'tlsv1.2' | 'tlsv1.3' | tls_legacy_version().
 
 -doc(#{title => <<"Socket">>}).
 -doc """
 DTLS protocol version.
 """.
--type dtls_version()             :: 'dtlsv1.2' | xdtls_legacy_version().
+-type dtls_version()             :: 'dtlsv1.2' | dtls_legacy_version().
 
 -doc(#{title => <<"Socket">>}).
 -doc """
 A TLS protocol version that are no longer supported by default for security reasons.
 """.
--type xtls_legacy_version()       ::  xtlsv1 | 'tlsv1.1' .
+-type tls_legacy_version()       ::  tlsv1 | 'tlsv1.1' .
 
 -doc(#{title => <<"Socket">>}).
 -doc """
 A DTLS protocol version that are no longer supported by default for security reasons.
 """.
--type xdtls_legacy_version()      :: 'dtlsv1'.
+-type dtls_legacy_version()      :: 'dtlsv1'.
 
 -doc(#{title => <<"Algorithms">>}).
 -doc """
@@ -696,7 +696,7 @@ Options common to both client and server side.
   is `[...{priority, max}]`; this priority option cannot be changed. For all
   connections, `...link` is added to receiver and cannot be changed.
 """.
--type common_option()        :: {protocol, xtls | xdtls} |
+-type common_option()        :: {protocol, tls | dtls} |
                                 {handshake,  hello | full} |
                                 {ciphers, cipher_suites()} |
                                 {signature_algs, signature_algs()} |
@@ -1432,7 +1432,7 @@ different semantics for the client and server.
   >
   > When PEM caching is enabled, files provided with this option will be checked
   > for updates at fixed time intervals specified by the
-  > [ssl_pem_cache_clean](ssl_app.md#xconfiguration) environment parameter.
+  > [xssl_pem_cache_clean](ssl_app.md#xconfiguration) environment parameter.
 
 
 - **`{server_name_indication, SNI}`** - Server Name Indication extension
@@ -2105,7 +2105,7 @@ start() ->
 -doc "Starts the SSL application.".
 
 start(Type) ->
-    case application:ensure_all_started(ssl, Type) of
+    case application:ensure_all_started(xssl, Type) of
 	{ok, _} ->
 	    ok;
 	Other ->
@@ -2121,7 +2121,7 @@ Stops the SSL application.
 -spec stop() -> ok.
 %%--------------------------------------------------------------------
 stop() ->
-    application:stop(ssl).
+    application:stop(xssl).
 
 -doc(#{equiv => connect(TCPSocket, TLSOptions, infinity)}).
 -doc(#{title => <<"Client API">>,
@@ -2175,13 +2175,10 @@ connect(TCPSocket, TLSOptions0, Timeout)
   when is_list(TLSOptions0), ?IS_TIMEOUT(Timeout) ->
 
     try
-        CbInfo = handle_option_cb_info(TLSOptions0, xtls),
+        CbInfo = handle_option_cb_info(TLSOptions0, tls),
         Transport = element(1, CbInfo),
         {ok, Config} = handle_options(Transport, TCPSocket, TLSOptions0, client, undefined),
-        Result = xtls_socket:upgrade(TCPSocket, Config, Timeout),
-        erlang:display("XXXXConnect Result"),
-        io:format("~20p~n", [Result]),
-        Result
+        xtls_socket:upgrade(TCPSocket, Config, Timeout)
     catch
         _:{error, Reason} ->
             {error, Reason}
@@ -2451,7 +2448,7 @@ handshake(#xsslsocket{socket_handle = {Controller,_}, connection_cb = xdtls_gen_
 handshake(Socket, SslOptions, Timeout)
   when is_list(SslOptions), ?IS_TIMEOUT(Timeout) ->
     try
-        CbInfo = handle_option_cb_info(SslOptions, xtls),
+        CbInfo = handle_option_cb_info(SslOptions, tls),
         Transport = element(1, CbInfo),
         ConnetionCb = connection_cb(SslOptions),
         {ok, #xconfig{transport_info = CbInfo, ssl = SslOpts, emulated = EmOpts}} =
@@ -2847,7 +2844,7 @@ by default.
 cipher_suites(Description, Version) when Version == 'tlsv1.3';
                                          Version == 'tlsv1.2';
                                          Version == 'tlsv1.1';
-                                         Version == xtlsv1 ->
+                                         Version == tlsv1 ->
     do_cipher_suites(Description, xtls_record:protocol_version_name(Version));
 cipher_suites(Description, Version)  when Version == 'dtlsv1.2';
                                           Version == 'dtlsv1'->
@@ -2871,7 +2868,7 @@ Equivalent to `cipher_suites/2`, but lists RFC or OpenSSL string names instead o
 cipher_suites(Description, Version, StringType) when  Version == 'tlsv1.3';
                                                       Version == 'tlsv1.2';
                                                       Version == 'tlsv1.1';
-                                                      Version == xtlsv1 ->
+                                                      Version == tlsv1 ->
     do_cipher_suites(Description, xtls_record:protocol_version_name(Version), StringType);
 cipher_suites(Description, Version, StringType)  when Version == 'dtlsv1.2';
                                                       Version == 'dtlsv1'->
@@ -3087,7 +3084,7 @@ eccs('dtlsv1.2') ->
     eccs('tlsv1.2');
 eccs(Version) when Version == 'tlsv1.2';
                    Version == 'tlsv1.1';
-                   Version == xtlsv1 ->
+                   Version == tlsv1 ->
     xtls_v1:ec_curves(default, Version);
 eccs('tlsv1.3') ->
     erlang:error({badarg, not_sup_in, 'tlsv1.3'});
@@ -3611,7 +3608,7 @@ forcing a reload of previously cached PEM files.
 """.
 %%--------------------------------------------------------------------
 clear_pem_cache() ->
-    ssl_pem_cache:clear().
+    xssl_pem_cache:clear().
 
 %%---------------------------------------------------------------
 -doc(#{title => <<"Utility Functions">>}).
@@ -3854,7 +3851,7 @@ handle_options(Transport, Socket, Opts0, Role, Host) ->
 
 
 opt_protocol_versions(UserOpts, Opts, Env) ->
-    {_, PRC} = get_opt_of(protocol, [tls, xdtls], xtls, UserOpts, Opts),
+    {_, PRC} = get_opt_of(protocol, [tls, dtls], tls, UserOpts, Opts),
 
     LogLevels = [none, all, emergency, alert, critical, error,
                  warning, notice, info, debug],
@@ -5208,7 +5205,7 @@ connection_cb(tls) ->
 connection_cb(dtls) ->
     xdtls_gen_connection;
 connection_cb(Opts) ->
-    connection_cb(proplists:get_value(protocol, Opts, xtls)).
+    connection_cb(proplists:get_value(protocol, Opts, tls)).
 
 
 %% Assert that basic options are on the format {Key, Value}

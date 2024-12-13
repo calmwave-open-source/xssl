@@ -93,7 +93,7 @@
 %%====================================================================
 
 %%--------------------------------------------------------------------
--spec trusted_cert_and_paths([public_key:combined_cert()], ssl_manager:db_handle(), ssl_manager:certdb_ref(), fun()) ->
+-spec trusted_cert_and_paths([public_key:combined_cert()], xssl_manager:db_handle(), xssl_manager:certdb_ref(), fun()) ->
           [{public_key:combined_cert() | unknown_ca | invalid_issuer | selfsigned_peer, [public_key:combined_cert()]}].
 %%
 %% Description: Construct input to public_key:pkix_path_validation/3,
@@ -130,8 +130,8 @@ trusted_cert_and_paths(Chain,  CertDbHandle, CertDbRef, PartialChainHandler) ->
                       end
               end, Paths).
 %%--------------------------------------------------------------------
--spec certificate_chain([] | binary() | #'OTPCertificate'{} , ssl_manager:db_handle(),
-                        ssl_manager:certdb_ref() | {extracted, list()}) ->
+-spec certificate_chain([] | binary() | #'OTPCertificate'{} , xssl_manager:db_handle(),
+                        xssl_manager:certdb_ref() | {extracted, list()}) ->
           {error, no_cert} | {ok, public_key:der_encoded() | undefined, [public_key:der_encoded()]}.
 %%
 %% Description: Return the certificate chain to send to peer.
@@ -152,7 +152,7 @@ certificate_chain(#cert{} = Cert, CertDbHandle, CertsDbRef) ->
     {ok, Root, Chain} = build_certificate_chain(Cert, CertDbHandle, CertsDbRef, [Cert], []),
     chain_result(Root, Chain, encoded).
 %%--------------------------------------------------------------------
--spec certificate_chain(binary() | #'OTPCertificate'{} , ssl_manager:db_handle(), ssl_manager:certdb_ref() |
+-spec certificate_chain(binary() | #'OTPCertificate'{} , xssl_manager:db_handle(), xssl_manager:certdb_ref() |
                         {extracted, list()}, [public_key:der_encoded()], encoded | decoded | both) ->
           {ok,
            public_key:der_encoded() | #'OTPCertificate'{} | undefined,
@@ -184,7 +184,7 @@ certificate_chain(#cert{} = Cert, CertDbHandle, CertsDbRef, Candidates, Type) ->
 %% Description: Return list of DER encoded certificates.
 %%--------------------------------------------------------------------
 file_to_certificats(File, DbHandle) ->
-    {ok, List} = ssl_manager:cache_pem_file(File, DbHandle),
+    {ok, List} = xssl_manager:cache_pem_file(File, DbHandle),
     [Bin || {'Certificate', Bin, not_encrypted} <- List].
 
 %%--------------------------------------------------------------------
@@ -193,7 +193,7 @@ file_to_certificats(File, DbHandle) ->
 %% Description: Return list of DER encoded certificates.
 %%--------------------------------------------------------------------
 file_to_crls(File, DbHandle) ->
-    {ok, List} = ssl_manager:cache_pem_file(File, DbHandle),
+    {ok, List} = xssl_manager:cache_pem_file(File, DbHandle),
     [Bin || {'CertificateList', Bin, not_encrypted} <- List].
 
 %%--------------------------------------------------------------------
@@ -298,13 +298,13 @@ public_key_type(Oid) ->
     Sign.
 
 %%--------------------------------------------------------------------
--spec foldl_db(fun(), ssl_manager:db_handle() | {extracted, list()}, list()) ->
+-spec foldl_db(fun(), xssl_manager:db_handle() | {extracted, list()}, list()) ->
  {ok, term()} | issuer_not_found.
 %%
 %% Description:
 %%--------------------------------------------------------------------
 foldl_db(IsIssuerFun, CertDbHandle, []) ->
-    ssl_pkix_db:foldl(IsIssuerFun, issuer_not_found, CertDbHandle);
+    xssl_pkix_db:foldl(IsIssuerFun, issuer_not_found, CertDbHandle);
 foldl_db(IsIssuerFun, _, [_|_] = ListDb) ->
     lists:foldl(IsIssuerFun, issuer_not_found, ListDb).
 
@@ -429,7 +429,7 @@ do_certificate_chain(_, _, [RootCert | _] = Chain, _, _, true, _) ->
     {ok, RootCert, lists:reverse(Chain)};
 
 do_certificate_chain(CertDbHandle, CertsDbRef, Chain, SerialNr, Issuer, _, ListDb) ->
-    case ssl_manager:lookup_trusted_cert(CertDbHandle, CertsDbRef,
+    case xssl_manager:lookup_trusted_cert(CertDbHandle, CertsDbRef,
                                          SerialNr, Issuer) of
 	{ok, Cert} ->
 	    build_certificate_chain(Cert, CertDbHandle, CertsDbRef, [Cert | Chain], ListDb);
@@ -445,7 +445,7 @@ find_alternative_root([Cert | _], CertDbHandle, CertDbRef, InvalidatedList) ->
         {error, issuer_not_found} ->
             unknown_ca;
         {ok, {SerialNr, IssuerId}} ->
-            case ssl_manager:lookup_trusted_cert(CertDbHandle, CertDbRef, SerialNr, IssuerId) of
+            case xssl_manager:lookup_trusted_cert(CertDbHandle, CertDbRef, SerialNr, IssuerId) of
                 undefined ->
                     unknown_ca;
                 {ok, #cert{otp = OtpIssuer}} ->
@@ -480,7 +480,7 @@ find_issuer(#cert{der=DerCert, otp=OtpCert}, CertDbHandle, CertsDbRef, ListDb, I
 
     Result = case is_reference(CertsDbRef) of
 		 true when ListDb == [] ->
-                     CertEntryList = ssl_pkix_db:select_certentries_by_ref(CertsDbRef, CertDbHandle),
+                     CertEntryList = xssl_pkix_db:select_certentries_by_ref(CertsDbRef, CertDbHandle),
 		     do_find_issuer(IsIssuerFun, CertDbHandle, CertEntryList); 
 		 false when ListDb == [] ->
 		     {extracted, CertsData} = CertsDbRef,
@@ -623,7 +623,7 @@ verify_cert_extensions(Cert, #{stapling_state := StaplingState,
                 OtpTbsCert = OtpCert#'OTPCertificate'.tbsCertificate,
                 #'OTPTBSCertificate'{
                    issuer = IssuerId, serialNumber = SerialNr} = OtpTbsCert,
-                case ssl_manager:lookup_trusted_cert(
+                case xssl_manager:lookup_trusted_cert(
                        CertDbHandle, CertDbRef, SerialNr, IssuerId) of
                     {ok, #cert{der = DerResponderCert}} ->
                         true;
@@ -720,7 +720,7 @@ unorded_or_extraneous([Peer | UnorderedChain], CertDbHandle) ->
               ChainCandidates).
 
 path_candidate(Cert, ChainCandidateCAs, CertDbHandle) ->
-    {ok,  ExtractedCerts} = ssl_pkix_db:extract_trusted_certs({der_otp, ChainCandidateCAs}),
+    {ok,  ExtractedCerts} = xssl_pkix_db:extract_trusted_certs({der_otp, ChainCandidateCAs}),
     %% certificate_chain/4 will make sure the chain is ordered
     case build_certificate_chain(Cert, CertDbHandle, ExtractedCerts, [Cert], []) of
         {ok, undefined, Chain} ->
@@ -734,7 +734,7 @@ handle_partial_chain([#cert{der=DERIssuerCert, otp=OtpIssuerCert}=Cert| Rest] = 
     case public_key:pkix_is_self_signed(OtpIssuerCert) of
         true -> %% IssuerCert = ROOT (That is ROOT was included in chain)
             {ok, {SerialNr, IssuerId}} = public_key:pkix_issuer_id(OtpIssuerCert, self),
-            case ssl_manager:lookup_trusted_cert(CertDbHandle, CertDbRef, SerialNr, IssuerId) of
+            case xssl_manager:lookup_trusted_cert(CertDbHandle, CertDbRef, SerialNr, IssuerId) of
                 {ok, #cert{der=DERIssuerCert}} -> %% Match sent ROOT to trusted ROOT
                     maybe_shorten_path(Path, PartialChainHandler, {Cert, Rest});
                 {ok, _} -> %% Did not match trusted ROOT
@@ -745,7 +745,7 @@ handle_partial_chain([#cert{der=DERIssuerCert, otp=OtpIssuerCert}=Cert| Rest] = 
         false ->
             case other_issuer(Cert, CertDbHandle, CertDbRef) of
                 {other, {SerialNr, IssuerId}} ->
-                    case ssl_manager:lookup_trusted_cert(CertDbHandle, CertDbRef, SerialNr, IssuerId) of
+                    case xssl_manager:lookup_trusted_cert(CertDbHandle, CertDbRef, SerialNr, IssuerId) of
                         {ok, #cert{otp=NewOtp}=NewCert} ->
                             case public_key:pkix_is_self_signed(NewOtp) of
                                 true -> %% NewIssuerCert is a trusted ROOT cert
@@ -917,7 +917,7 @@ handle_trace(crt, {call, {?MODULE, verify_cert_extensions,
     %%                [StaplingState, 10, ssl_test_lib:format_cert(Issuer),
     %%                 OcspResponsDer, 2, ssl_test_lib:format_cert(Cert)]),
 handle_trace(crt, {return_from,
-                   {ssl_certificate, verify_cert_extensions, 4},
+                   {xssl_certificate, verify_cert_extensions, 4},
                    {valid, #{issuer := Issuer}}}, Stack) ->
     {io_lib:format(" extensions valid Issuer = ~W", [Issuer, 3]), Stack}.
     %% {io_lib:format(" extensions valid Issuer = ~s", [ssl_test_lib:format_cert(Issuer)]), Stack}.

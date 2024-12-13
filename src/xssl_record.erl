@@ -409,7 +409,7 @@ nonce_seed(_,_, CipherState) ->
 %%--------------------------------------------------------------------
 
 empty_connection_state(ConnectionEnd) ->
-    MaxEarlyDataSize = ssl_config:get_max_early_data_size(),
+    MaxEarlyDataSize = xssl_config:get_max_early_data_size(),
     empty_connection_state(ConnectionEnd, _Version = undefined, MaxEarlyDataSize).
 %%
 empty_connection_state(ConnectionEnd, Version, MaxEarlyDataSize) ->

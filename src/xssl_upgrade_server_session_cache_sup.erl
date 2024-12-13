@@ -56,7 +56,7 @@ start_child(Type) ->
              %% only one will be able to grab the local name and we will use
              %% that process for handling pre TLS-1.3 sessions for
              %% servers with to us unknown listeners. 
-             case supervisor:start_child(SupName, [ssl_unknown_listener, ssl_config:pre_1_3_session_opts(server)]) of
+             case supervisor:start_child(SupName, [xssl_unknown_listener, xssl_config:pre_1_3_session_opts(server)]) of
                  {error, {already_started, Child}} ->
                      {ok, Child};
                  {ok, _} = Return ->
@@ -76,10 +76,10 @@ init(_) ->
                  period    => 3600
                 },
     ChildSpecs = [#{id       => undefined,
-                    start    =>  {ssl_server_session_cache, start_link, []},
+                    start    =>  {xssl_server_session_cache, start_link, []},
                     restart  => transient, 
                     shutdown => 4000,
-                    modules  => [ssl_server_session_cache],
+                    modules  => [xssl_server_session_cache],
                     type     => worker
                    }],     
     {ok, {SupFlags, ChildSpecs}}.

@@ -81,9 +81,9 @@ listen(Transport, Port, #xconfig{transport_info = {Transport, _, _, _, _},
     case Transport:listen(Port, Options ++ internal_inet_values()) of
 	{ok, ListenSocket} ->
 	    {ok, Tracker} = inherit_tracker(ListenSocket, EmOpts, SslOpts),
-            LifeTime = ssl_config:get_ticket_lifetime(),
-            TicketStoreSize = ssl_config:get_ticket_store_size(),
-            MaxEarlyDataSize = ssl_config:get_max_early_data_size(),
+            LifeTime = xssl_config:get_ticket_lifetime(),
+            TicketStoreSize = xssl_config:get_ticket_store_size(),
+            MaxEarlyDataSize = xssl_config:get_max_early_data_size(),
             %% TLS-1.3 session handling
             {ok, SessionHandler} =
                 session_tickets_tracker(ListenSocket, LifeTime, TicketStoreSize, MaxEarlyDataSize, SslOpts),
@@ -263,9 +263,9 @@ default_inet_values() ->
     [{packet_size, 0}, {packet,0}, {header, 0}, {active, true}, {mode, list}].
 
 inherit_tracker(ListenSocket, EmOpts, #{erl_dist := true} = SslOpts) ->
-    ssl_listen_tracker_sup:start_child_dist([ListenSocket, EmOpts, SslOpts]);
+    xssl_listen_tracker_sup:start_child_dist([ListenSocket, EmOpts, SslOpts]);
 inherit_tracker(ListenSocket, EmOpts, SslOpts) ->
-    ssl_listen_tracker_sup:start_child([ListenSocket, EmOpts, SslOpts]).
+    xssl_listen_tracker_sup:start_child([ListenSocket, EmOpts, SslOpts]).
 
 session_tickets_tracker(ListenSocket, Lifetime, TicketStoreSize, MaxEarlyDataSize,
                         #{erl_dist := true,

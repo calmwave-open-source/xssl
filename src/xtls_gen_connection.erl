@@ -77,8 +77,6 @@ start_fsm(Role, Host, Port, Socket, {SSLOpts, _, _Trackers} = Opts,
     ErlDist = maps:get(erl_dist, SSLOpts, false),
     SenderSpawnOpts = maps:get(sender_spawn_opts, SSLOpts, []),
     SenderOptions = handle_sender_options(ErlDist, SenderSpawnOpts),
-
-    erlang:display("XXXXCalling stasrt_connection_tree"),
     Starter = start_connection_tree(User, ErlDist, SenderOptions,
                                     Role, [Host, Port, Socket, Opts, User, CbInfo]),
     receive

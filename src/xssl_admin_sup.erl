@@ -55,14 +55,14 @@ init([]) ->
     {ok, {SupFlags, ChildSpecs}}.
 
 manager_opts() ->
-    CbOpts = case application:get_env(ssl, session_cb) of
+    CbOpts = case application:get_env(xssl, session_cb) of
 		 {ok, Cb} when is_atom(Cb) ->
 		     InitArgs = session_cb_init_args(),
 		     [{session_cb, Cb}, {session_cb_init_args, InitArgs}];
 		 _  ->
 		     []
 	     end,
-    case application:get_env(ssl, session_lifetime) of
+    case application:get_env(xssl, session_lifetime) of
 	{ok, Time} when is_integer(Time) ->
 	    [{session_lifetime, Time}| CbOpts];
 	_  ->
@@ -74,20 +74,20 @@ manager_opts() ->
 %%--------------------------------------------------------------------
 
 pem_cache_child_spec() ->
-    #{id       => ssl_pem_cache,
-      start    => {ssl_pem_cache, start_link, [[]]},
+    #{id       => xssl_pem_cache,
+      start    => {xssl_pem_cache, start_link, [[]]},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [ssl_pem_cache],
+      modules  => [xssl_pem_cache],
       type     => worker
      }.
 session_and_cert_manager_child_spec() ->
     Opts = manager_opts(),
-    #{id       => ssl_manager,
-      start    => {ssl_manager, start_link, [Opts]},
+    #{id       => xssl_manager,
+      start    => {xssl_manager, start_link, [Opts]},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [ssl_manager],
+      modules  => [xssl_manager],
       type     => worker
      }.
 
@@ -95,15 +95,15 @@ ticket_store_spec() ->
     Size = client_session_ticket_store_size(),
     Lifetime = client_session_ticket_lifetime(),
     #{id       => xtls_client_ticket_store,
-      start    => {tls_client_ticket_store, start_link, [Size, Lifetime]},
+      start    => {xtls_client_ticket_store, start_link, [Size, Lifetime]},
       restart  => permanent,
       shutdown => 4000,
-      modules  => [tls_client_ticket_store],
+      modules  => [xtls_client_ticket_store],
       type     => worker
      }.
 
 session_cb_init_args() ->
-    case application:get_env(ssl, session_cb_init_args) of
+    case application:get_env(xssl, session_cb_init_args) of
 	{ok, Args} when is_list(Args) ->
 	    Args;
 	_  ->
@@ -111,7 +111,7 @@ session_cb_init_args() ->
     end.
 
 client_session_ticket_store_size() ->
-    case application:get_env(ssl, client_session_ticket_store_size) of
+    case application:get_env(xssl, client_session_ticket_store_size) of
 	{ok, Size} when is_integer(Size) andalso
                         Size > 0 ->
 	    Size;
@@ -120,7 +120,7 @@ client_session_ticket_store_size() ->
     end.
 
 client_session_ticket_lifetime() ->
-    case application:get_env(ssl, client_session_ticket_lifetime) of
+    case application:get_env(xssl, client_session_ticket_lifetime) of
 	{ok, Size} when is_integer(Size) andalso
                         Size > 0 ->
 	    Size;

@@ -289,7 +289,7 @@ certificate(undefined, _, _, _, client) ->
             certificate_request_context = <<>>,
             certificate_list = []}};
 certificate([OwnCert], CertDbHandle, CertDbRef, _CRContext, Role) ->
-    case ssl_certificate:certificate_chain(OwnCert, CertDbHandle, CertDbRef) of
+    case xssl_certificate:certificate_chain(OwnCert, CertDbHandle, CertDbRef) of
 	{ok, _, Chain} ->
             CertList = chain_to_cert_list(Chain),
             %% If this message is in response to a CertificateRequest, the value of
@@ -419,7 +419,7 @@ process_certificate_request(#certificate_request_1_3{
                            maps:get(signature_algs_cert, Extensions, undefined)),
     CertAuths = get_certificate_authorities(maps:get(certificate_authorities, Extensions, undefined)),
 
-    CertKeyPairs = ssl_certificate:available_cert_key_pairs(CertKeyAlts, Version),
+    CertKeyPairs = xssl_certificate:available_cert_key_pairs(CertKeyAlts, Version),
     Session = select_client_cert_key_pair(Session0, CertKeyPairs,
                                           ServerSignAlgs, ServerSignAlgsCert, ClientSignAlgs,
                                           CertDbHandle, CertDbRef, CertAuths, undefined),
@@ -1942,7 +1942,7 @@ select_client_cert_key_pair(Session0, [#{private_key := Key, certs := [Cert| _] 
             %% Check if server supports signature algorithm of client certificate
             case check_cert_sign_algo(SignAlgo, SignHash, ServerSignAlgs, ServerSignAlgsCert) of
                 ok ->
-                    case ssl_certificate:handle_cert_auths(Certs, CertAuths, CertDbHandle, CertDbRef) of
+                    case xssl_certificate:handle_cert_auths(Certs, CertAuths, CertDbHandle, CertDbRef) of
                         {ok, EncodedChain} ->
                             Session0#session{sign_alg = SelectedSignAlg,
                                              own_certificates = EncodedChain,

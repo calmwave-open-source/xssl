@@ -57,18 +57,18 @@ init([]) ->
 %%--------------------------------------------------------------------
 dtls_connection_child_spec() ->
     #{id       => xdtls_connection_sup,
-      start    => {dtls_connection_sup, start_link, []},
+      start    => {xdtls_connection_sup, start_link, []},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [dtls_connection_sup],
+      modules  => [xdtls_connection_sup],
       type     => supervisor
      }.
 
 server_instance_child_spec() ->
     #{id       => xdtls_server_sup,
-      start    => {dtls_server_sup, start_link, []},
+      start    => {xdtls_server_sup, start_link, []},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [dtls_server_sup],
+      modules  => [xdtls_server_sup],
       type     => supervisor
      }.

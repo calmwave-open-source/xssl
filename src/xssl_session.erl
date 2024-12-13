@@ -77,7 +77,7 @@ is_new(_ClientSuggestion, _ServerDecision) ->
 
 %%--------------------------------------------------------------------
 -spec client_select_session({xssl:host(), inet:port_number(), map()},
-                            ssl_manager:db_handle(), atom(), #session{}, list()) -> #session{}.
+                            xssl_manager:db_handle(), atom(), #session{}, list()) -> #session{}.
 %%
 %% Description: Should be called by the client side to get an id
 %%              for the client hello message.
@@ -108,7 +108,7 @@ client_select_session({_, _, #{versions := Versions,
     end.
 
 %%--------------------------------------------------------------------
--spec server_select_session(ssl_record:ssl_version(), pid(), xssl:session_id(), map(),
+-spec server_select_session(xssl_record:ssl_version(), pid(), xssl:session_id(), map(),
                             list())  -> {binary(), #session{} | undefined}.
 %%
 %% Description: Should be called by the server side to get an id

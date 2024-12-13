@@ -53,7 +53,7 @@
 
 -define(FAMILY, inet).
 -define(DRIVER, inet_tcp). % Implies ?FAMILY = inet through inet_drv.c
--define(PROTOCOL, xtls).
+-define(PROTOCOL, tls).
 
 %% -------------------------------------------------------------------------
 
@@ -823,14 +823,14 @@ parse_rdn([_|Rdn]) ->
 get_ssl_options(Type) ->
     [{erl_dist, true} |
      case
-         case init:get_argument(ssl_dist_opt) of
+         case init:get_argument(xssl_dist_opt) of
              {ok, Args} ->
                  ssl_options(Type, lists:append(Args));
              _ ->
                  []
          end
          ++
-         try ets:lookup(ssl_dist_opts, Type) of
+         try ets:lookup(xssl_dist_opts, Type) of
              [{Type, Opts0}] ->
                  Opts0;
              _ ->

@@ -57,19 +57,19 @@ init([]) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 ssl_admin_child_spec() ->
-    #{id       => ssl_admin_sup,
-      start    =>  {ssl_admin_sup, start_link, []},
+    #{id       => xssl_admin_sup,
+      start    =>  {xssl_admin_sup, start_link, []},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [ssl_admin_sup],
+      modules  => [xssl_admin_sup],
       type     => supervisor
       }.
   
 ssl_connection_sup() ->
-    #{id        => ssl_connection_sup,
-      start     =>  {ssl_connection_sup, start_link, []},
+    #{id        => xssl_connection_sup,
+      start     =>  {xssl_connection_sup, start_link, []},
       restart   => permanent, 
       shutdown  => 4000,
-      modules   => [ssl_connection_sup],
+      modules   => [xssl_connection_sup],
       type      => supervisor
      }.

@@ -14,7 +14,8 @@ defmodule Xssl.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :runtime_tools, :os_mon, :public_key]
+      extra_applications: [:logger, :runtime_tools, :os_mon, :public_key],
+      mod: {:xssl_app, []}
     ]
   end
 

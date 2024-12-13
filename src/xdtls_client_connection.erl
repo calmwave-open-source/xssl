@@ -199,7 +199,7 @@ initial_hello({call, From}, {start, Timeout},
 	   } = State0) ->
     Packages = maps:get(active_n, PS),
     xdtls_socket:setopts(Transport, Socket, [{active,Packages}]),
-    CertKeyPairs = ssl_certificate:available_cert_key_pairs(CertKeyAlts),
+    CertKeyPairs = xssl_certificate:available_cert_key_pairs(CertKeyAlts),
     Session = ssl_session:client_select_session({Host, Port, SslOpts}, Cache,
                                                 CacheCb, Session0, CertKeyPairs),
     Hello = xdtls_handshake:client_hello(Host, Port, ConnectionStates0, SslOpts,
@@ -235,7 +235,7 @@ initial_hello({call, From}, {start, {Opts, EmOpts}, Timeout},
 	initial_hello({call, From}, {start, Timeout},
 	     State#state{ssl_options = SslOpts,
                          socket_options =
-                             ssl_config:new_emulated(EmOpts, SockOpts)})
+                             xssl_config:new_emulated(EmOpts, SockOpts)})
     catch throw:Error ->
 	   {stop_and_reply, {shutdown, normal}, {reply, From, {error, Error}}, State0}
     end;
@@ -467,7 +467,7 @@ connection(internal, #hello_request{},
                   protocol_specific = PS
                  } = State0) ->
     #{current_cookie_secret := Cookie} = PS,
-    CertKeyPairs = ssl_certificate:available_cert_key_pairs(CertKeyAlts),
+    CertKeyPairs = xssl_certificate:available_cert_key_pairs(CertKeyAlts),
     Session = ssl_session:client_select_session({Host, Port, SslOpts}, Cache, CacheCb,
                                                 Session0, CertKeyPairs),
     Hello = xdtls_handshake:client_hello(Host, Port, Cookie, ConnectionStates0, SslOpts,

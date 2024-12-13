@@ -177,7 +177,7 @@ server_hello_done() ->
     #server_hello_done{}.
 
 %%--------------------------------------------------------------------
--spec certificate([public_key:der_encoded()], ssl_manager:db_handle(), ssl_manager:certdb_ref(), client | server) -> #certificate{} | #alert{}.
+-spec certificate([public_key:der_encoded()], xssl_manager:db_handle(), xssl_manager:certdb_ref(), client | server) -> #certificate{} | #alert{}.
 %%
 %% Description: Creates a certificate message.
 %%--------------------------------------------------------------------
@@ -187,7 +187,7 @@ certificate([[]], _, _, client) ->
     %% certificates. (chapter 7.4.6. RFC 4346)
     #certificate{asn1_certificates = []};
 certificate([OwnCert], CertDbHandle, CertDbRef, _) ->
-    {ok, _,  CertChain} =  ssl_certificate:certificate_chain(OwnCert, CertDbHandle, CertDbRef),
+    {ok, _,  CertChain} =  xssl_certificate:certificate_chain(OwnCert, CertDbHandle, CertDbRef),
     #certificate{asn1_certificates = CertChain};
 certificate([_, _ |_] = Chain, _, _, _) ->
     #certificate{asn1_certificates = Chain}.
@@ -218,8 +218,8 @@ client_certificate_verify([OwnCert|_], MasterSecret, Version,
     end.
 
 %%--------------------------------------------------------------------
--spec certificate_request(ssl_manager:db_handle(),
-			  ssl_manager:certdb_ref(),  #hash_sign_algos{}, 
+-spec certificate_request(xssl_manager:db_handle(),
+			  xssl_manager:certdb_ref(),  #hash_sign_algos{}, 
                           ssl_record:ssl_version(), boolean()) ->
           #certificate_request{}.
 %%
@@ -364,7 +364,7 @@ key_exchange(server, Version, {srp, {PublicKey, _},
 			    ClientRandom, ServerRandom, PrivateKey).
 
 %%--------------------------------------------------------------------
--spec finished(ssl_record:ssl_version(), client | server, integer(), binary(), ssl_handshake_history()) ->
+-spec finished(xssl_record:ssl_version(), client | server, integer(), binary(), ssl_handshake_history()) ->
     #finished{}.
 %%
 %% Description: Creates a handshake finished message
@@ -384,7 +384,7 @@ next_protocol(SelectedProtocol) ->
 %% Handle handshake messages 
 %%====================================================================
 %%--------------------------------------------------------------------
--spec certify([public_key:combined_cert()], ssl_manager:db_handle(), ssl_manager:certdb_ref(), ssl_options(), term(),
+-spec certify([public_key:combined_cert()], xssl_manager:db_handle(), xssl_manager:certdb_ref(), ssl_options(), term(),
 	      client | server, inet:hostname() | inet:ip_address(),
               ssl_record:ssl_version(), map()) ->  {#cert{}, public_key_info()} | #alert{}.
 %%
@@ -397,7 +397,7 @@ certify(Certs, CertDbHandle, CertDbRef,
     [PeerCert | _ChainCerts ] = Certs,
     try
 	PathsAndAnchors  =
-	    ssl_certificate:trusted_cert_and_paths(Certs, CertDbHandle, CertDbRef, PartialChain),
+	    xssl_certificate:trusted_cert_and_paths(Certs, CertDbHandle, CertDbRef, PartialChain),
 
 	case path_validate(PathsAndAnchors, ServerName, Role, CertDbHandle, CertDbRef, CRLDbHandle,
                            Version, SSlOptions, ExtInfo) of
@@ -430,7 +430,7 @@ certificate_verify(Signature, PublicKeyInfo, Version,
 	    ?ALERT_REC(?FATAL, ?BAD_CERTIFICATE)
     end.
 %%--------------------------------------------------------------------
--spec verify_signature(ssl_record:ssl_version(), binary(), {term(), term()}, binary(),
+-spec verify_signature(xssl_record:ssl_version(), binary(), {term(), term()}, binary(),
 				   public_key_info()) -> true | false.
 %%
 %% Description: Checks that a public_key signature is valid.
@@ -466,7 +466,7 @@ verify_signature(Version, Msg, {HashAlgo, dsa}, Signature, {?'id-dsa', PublicKey
     public_key:verify(Msg, HashAlgo, Signature, {PublicKey, PublicKeyParams}).
 
 %%--------------------------------------------------------------------
--spec master_secret(ssl_record:ssl_version(), #session{} | binary(), ssl_record:connection_states(),
+-spec master_secret(xssl_record:ssl_version(), #session{} | binary(), ssl_record:connection_states(),
 		   client | server) -> {binary(), ssl_record:connection_states()} | #alert{}.
 %%
 %% Description: Sets or calculates the master secret and calculate keys,
@@ -517,7 +517,7 @@ server_key_exchange_hash(_, Value) ->
     Value.
 
 %%--------------------------------------------------------------------
--spec verify_connection(ssl_record:ssl_version(), #finished{}, client | server, integer(), binary(),
+-spec verify_connection(xssl_record:ssl_version(), #finished{}, client | server, integer(), binary(),
 			ssl_handshake_history()) -> verified | #alert{}.
 %%
 %% Description: Checks the ssl handshake finished message to verify
@@ -1102,7 +1102,7 @@ cipher_suites(Suites, true) ->
 
 select_session(SuggestedSessionId, CipherSuites, HashSigns, SessIdTracker, Session0,
                Version, SslOpts, CertKeyAlts) ->
-    CertKeyPairs = ssl_certificate:available_cert_key_pairs(CertKeyAlts, Version),
+    CertKeyPairs = xssl_certificate:available_cert_key_pairs(CertKeyAlts, Version),
     {SessionId, Resumed} = ssl_session:server_select_session(Version, SessIdTracker, SuggestedSessionId,
                                                              SslOpts, CertKeyPairs),
     case Resumed of
@@ -1657,7 +1657,7 @@ select_hashsign({#hash_sign_algos{hash_sign_algos = ClientHashSigns},
     ClientSignatureSchemes = client_signature_schemes(ClientHashSigns, ClientSignatureSchemes0),
     {SignAlgo0, Param, PublicKeyAlgo0, _, _} = get_cert_params(Cert),
     SignAlgo = sign_algo(SignAlgo0, Param),
-    PublicKeyAlgo = ssl_certificate:public_key_type(PublicKeyAlgo0),
+    PublicKeyAlgo = xssl_certificate:public_key_type(PublicKeyAlgo0),
 
     %% RFC 5246 (TLS 1.2)
     %% If the client provided a "signature_algorithms" extension, then all
@@ -1713,7 +1713,7 @@ select_hashsign(#certificate_request{
 		?TLS_1_2) ->
     {SignAlgo0, Param, PublicKeyAlgo0, _, _} = get_cert_params(Cert),
     SignAlgo = sign_algo(SignAlgo0, Param),
-    PublicKeyAlgo = ssl_certificate:public_key_type(PublicKeyAlgo0),
+    PublicKeyAlgo = xssl_certificate:public_key_type(PublicKeyAlgo0),
     case is_acceptable_cert_type(PublicKeyAlgo, Types) andalso
         is_supported_sign(SignAlgo, HashSigns) of
 	true ->
@@ -1724,7 +1724,7 @@ select_hashsign(#certificate_request{
     end;
 select_hashsign(#certificate_request{certificate_types = Types}, Cert, _, Version) ->
     {_, _, PublicKeyAlgo0, _, _} = get_cert_params(Cert),
-    PublicKeyAlgo = ssl_certificate:public_key_type(PublicKeyAlgo0),
+    PublicKeyAlgo = xssl_certificate:public_key_type(PublicKeyAlgo0),
 
     %% Check cert even for TLS 1.0/1.1
     case is_acceptable_cert_type(PublicKeyAlgo, Types) of
@@ -2061,7 +2061,7 @@ supported_cert_type_or_empty(Algo, Type) ->
     end.
 
 certificate_authorities_from_db(CertDbHandle, CertDbRef) when is_reference(CertDbRef) ->
-    ssl_pkix_db:select_certs_by_ref(CertDbRef, CertDbHandle);
+    xssl_pkix_db:select_certs_by_ref(CertDbRef, CertDbHandle);
 certificate_authorities_from_db(_CertDbHandle, {extracted, CertDbData}) ->
     %% Cache disabled, Ref contains data
     lists:foldl(fun({decoded, {_Key,Cert}}, Acc) -> [Cert | Acc] end,
@@ -2077,7 +2077,7 @@ path_validate(TrustedAndPath, ServerName, Role, CertDbHandle, CertDbRef, CRLDbHa
 
 validation_fun_and_state({Fun, UserState0}, VerifyState, CertPath, LogLevel) ->
     {fun(OtpCert, DerCert, {extension, _} = Extension, {SslState, UserState}) ->
-	     case ssl_certificate:validate(OtpCert,
+	     case xssl_certificate:validate(OtpCert,
 					   Extension,
 					   SslState,
                                            LogLevel) of
@@ -2097,7 +2097,7 @@ validation_fun_and_state({Fun, UserState0}, VerifyState, CertPath, LogLevel) ->
      end, {VerifyState, UserState0}};
 validation_fun_and_state(undefined, VerifyState, CertPath, LogLevel) ->
     {fun(OtpCert, _DerCert, {extension, _} = Extension, SslState) ->
-	     ssl_certificate:validate(OtpCert,
+	     xssl_certificate:validate(OtpCert,
 				      Extension,
 				      SslState,
                                       LogLevel);
@@ -2105,12 +2105,12 @@ validation_fun_and_state(undefined, VerifyState, CertPath, LogLevel) ->
                                                         (VerifyResult == valid_peer) ->
 	     case cert_status_check(OtpCert, SslState, VerifyResult, CertPath, LogLevel) of
 		 valid ->
-                     ssl_certificate:validate(OtpCert, VerifyResult, SslState, LogLevel);
+                     xssl_certificate:validate(OtpCert, VerifyResult, SslState, LogLevel);
 		 Reason ->
 		     {fail, Reason}
 	     end;
 	(OtpCert, _DerCert, VerifyResult, SslState) ->
-	     ssl_certificate:validate(OtpCert,
+	     xssl_certificate:validate(OtpCert,
 				      VerifyResult,
 				      SslState, LogLevel)
      end, VerifyState}.
@@ -2152,7 +2152,7 @@ apply_fun(Fun, OtpCert, DerCert, ExtensionOrError, UserState) ->
     end.
 
 maybe_check_hostname(OtpCert, valid_peer, SslState, LogLevel) ->
-    case ssl_certificate:validate(OtpCert, valid_peer, SslState, LogLevel) of
+    case xssl_certificate:validate(OtpCert, valid_peer, SslState, LogLevel) of
         {valid, _} ->
             valid_peer;
         {fail, Reason} ->
@@ -2285,7 +2285,7 @@ cert_status_check(_,
                                         status := received_staple}},
                   _VerifyResult, _, _) ->
     %% OCSP staple(s) will now be checked by
-    %% ssl_certificate:verify_cert_extensions/2 in ssl_certificate:validate
+    %% xssl_certificate:verify_cert_extensions/2 in xssl_certificate:validate
     valid;
 cert_status_check(OtpCert,
                   #{stapling_state := #{configured := false}} = SslState,
@@ -2413,7 +2413,7 @@ encrypted_premaster_secret(Secret, RSAPublicKey) ->
             throw(?ALERT_REC(?FATAL, ?HANDSHAKE_FAILURE, premaster_encryption_failed))
     end.
 
--spec calc_certificate_verify(ssl_record:ssl_version(), md5sha | xssl:hash(), _, [binary()]) -> binary().
+-spec calc_certificate_verify(xssl_record:ssl_version(), md5sha | xssl:hash(), _, [binary()]) -> binary().
 calc_certificate_verify(Version, HashAlgo, _MasterSecret, Handshake) when ?TLS_1_X(Version) ->
     xtls_v1:certificate_verify(HashAlgo, lists:reverse(Handshake)).
 
@@ -3887,13 +3887,13 @@ path_validate([{TrustedCert, Path} | Rest], ServerName, Role, CertDbHandle, Cert
                             Version, SslOptions, ExtInfo) of
         {error, {bad_cert, root_cert_expired}} = NewError ->
             NewInvalidatedList = [TrustedCert | InvalidatedList],
-            Alt = ssl_certificate:find_cross_sign_root_paths(
+            Alt = xssl_certificate:find_cross_sign_root_paths(
                     Path, CertDbHandle,CertDbRef, NewInvalidatedList),
             path_validate(Alt ++ Rest, ServerName, Role, CertDbHandle,
                           CertDbRef, CRLDbHandle, Version, SslOptions,
                           ExtInfo, NewInvalidatedList, NewError);
         {error, {bad_cert, unknown_ca}} = NewError ->
-            Alt = ssl_certificate:find_cross_sign_root_paths(
+            Alt = xssl_certificate:find_cross_sign_root_paths(
                     Path, CertDbHandle, CertDbRef, InvalidatedList),
             path_validate(Alt ++ Rest, ServerName, Role, CertDbHandle,
                           CertDbRef, CRLDbHandle, Version, SslOptions,

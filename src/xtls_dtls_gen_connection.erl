@@ -146,7 +146,7 @@ initial_state(Role, Sender, Tab, Host, Port, Socket, {SSLOptions, SocketOptions,
     ConnectionStates = xtls_record:init_connection_states(Role,
                                                          Version,
                                                          BeastMitigation),
-    #{session_cb := SessionCacheCb} = ssl_config:pre_1_3_session_opts(Role),
+    #{session_cb := SessionCacheCb} = xssl_config:pre_1_3_session_opts(Role),
     UserMonitor = erlang:monitor(process, User),
 
     SslSocket = xtls_socket:socket([self(),Sender], CbModule, Socket, xtls_gen_connection, Tab, Trackers),
@@ -186,7 +186,7 @@ initial_state(Role, Sender, Tab, Host, Port, Socket, {SSLOptions, SocketOptions,
        user_data_buffer = {[],0,[]},
        recv = #recv{},
        protocol_specific = #{sender => Sender,
-                             active_n => ssl_config:get_internal_active_n(
+                             active_n => xssl_config:get_internal_active_n(
                                            maps:get(erl_dist, SSLOptions, false)),
                              active_n_toggle => true
                             }

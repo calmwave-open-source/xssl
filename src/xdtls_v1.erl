@@ -36,7 +36,7 @@
 
 -define(COOKIE_BASE_TIMEOUT, 30000).
 
--spec suites(ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
+-spec suites(xssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 
 suites(Version) ->
     lists:filter(fun(Cipher) -> 

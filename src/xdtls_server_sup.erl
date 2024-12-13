@@ -60,18 +60,18 @@ init([]) ->
 %%--------------------------------------------------------------------
 xdtls_listeners_spec() ->
     #{id       => xdtls_listener_sup,
-      start    => {dtls_listener_sup, start_link, []},
+      start    => {xdtls_listener_sup, start_link, []},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [dtls_listener_sup],
+      modules  => [xdtls_listener_sup],
       type     => supervisor
      }.
 
 xssl_server_session_child_spec() ->
     #{id       => xdtls_server_session_cache_sup,
-      start    => {dtls_server_session_cache_sup, start_link, []},
+      start    => {xdtls_server_session_cache_sup, start_link, []},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [dtls_server_session_cache_sup],
+      modules  => [xdtls_server_session_cache_sup],
       type     => supervisor
      }.

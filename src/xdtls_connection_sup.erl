@@ -47,7 +47,7 @@ start_child(Args) ->
     supervisor:start_child(?MODULE, Args).
         
 start_child_dist(Args) ->
-    supervisor:start_child(dtls_connection_sup_dist, Args).
+    supervisor:start_child(xdtls_connection_sup_dist, Args).
     
 %%%=========================================================================
 %%%  Supervisor callback

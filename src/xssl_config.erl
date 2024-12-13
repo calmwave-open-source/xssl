@@ -187,7 +187,7 @@ pre_1_3_session_opts(Role) ->
     CbOpts#{lifetime => LifeTime, max => Max}.
 
 get_ticket_lifetime() ->
-    case application:get_env(ssl, server_session_ticket_lifetime) of
+    case application:get_env(xssl, server_session_ticket_lifetime) of
 	{ok, Seconds} when is_integer(Seconds) andalso
                            Seconds =< 604800 ->  %% MUST be less than 7 days
 	    Seconds;
@@ -196,7 +196,7 @@ get_ticket_lifetime() ->
     end.
 
 get_ticket_store_size() ->
-    case application:get_env(ssl, server_session_ticket_store_size) of
+    case application:get_env(xssl, server_session_ticket_store_size) of
 	{ok, Size} when is_integer(Size) ->
 	    Size;
 	_  ->
@@ -204,7 +204,7 @@ get_ticket_store_size() ->
     end.
 
 get_max_early_data_size() ->
-    case application:get_env(ssl, server_session_ticket_max_early_data) of
+    case application:get_env(xssl, server_session_ticket_max_early_data) of
 	{ok, Size} when is_integer(Size) ->
 	    Size;
 	_  ->
@@ -224,7 +224,7 @@ get_internal_active_n(true) ->
     %%  spike.
     erlang:system_time() rem ?INTERNAL_ACTIVE_N + 1;
 get_internal_active_n(false) ->
-    case application:get_env(ssl, internal_active_n) of
+    case application:get_env(xssl, internal_active_n) of
         {ok, N} when is_integer(N) ->
             N;
          _  ->
@@ -240,11 +240,11 @@ new_emulated(NewEmOpts, _) ->
 %% Internal functions 
 %%====================================================================	     
 init_manager_name(false) ->
-    put(ssl_manager, ssl_manager:name(normal)),
-    put(ssl_pem_cache, ssl_pem_cache:name(normal));
+    put(xssl_manager, xssl_manager:name(normal)),
+    put(xssl_pem_cache, xssl_pem_cache:name(normal));
 init_manager_name(true) ->
-    put(ssl_manager, ssl_manager:name(dist)),
-    put(ssl_pem_cache, ssl_pem_cache:name(dist)).
+    put(xssl_manager, xssl_manager:name(dist)),
+    put(xssl_pem_cache, xssl_pem_cache:name(dist)).
 
 init_cacerts(#{cacerts := CaCerts, crl_cache := CRLCache} = Opts, Role) ->
     CACertFile = maps:get(cacertfile, Opts, <<>>),
@@ -254,7 +254,7 @@ init_cacerts(#{cacerts := CaCerts, crl_cache := CRLCache} = Opts, Role) ->
 			undefined -> CACertFile;
 			_ -> {der, CaCerts}
 		    end,
-	    {ok,_} = ssl_manager:connection_init(Certs, Role, CRLCache)
+	    {ok,_} = xssl_manager:connection_init(Certs, Role, CRLCache)
 	catch
 	    _:Reason ->
 		file_error(CACertFile, {cacertfile, Reason})
@@ -275,7 +275,7 @@ init_certificate_file(<<>>, _PemCache, _Role) ->
     [];
 init_certificate_file(CertFile, PemCache, Role) ->
     try %% OwnCert | [OwnCert | Chain]
-        ssl_certificate:file_to_certificats(CertFile, PemCache)
+        xssl_certificate:file_to_certificats(CertFile, PemCache)
     catch
         _Error:_Reason when Role =:= client ->
             [];
@@ -300,7 +300,7 @@ init_private_key(undefined, CertKey, DbHandle) ->
         KeyFile ->
             Password = maps:get(password, CertKey, undefined),
             try
-                {ok, List} = ssl_manager:cache_pem_file(KeyFile, DbHandle),
+                {ok, List} = xssl_manager:cache_pem_file(KeyFile, DbHandle),
                 [PemEntry] = [PemEntry || PemEntry = {PKey, _ , _} <- List,
                                           PKey =:= 'RSAPrivateKey' orelse
                                               PKey =:= 'DSAPrivateKey' orelse
@@ -361,7 +361,7 @@ init_diffie_hellman(DbHandle, Opts, server) ->
 
 dh_file(DbHandle, DHParamFile) ->
     try
-        {ok, List} = ssl_manager:cache_pem_file(DHParamFile,DbHandle),
+        {ok, List} = xssl_manager:cache_pem_file(DHParamFile,DbHandle),
         case [Entry || Entry = {'DHParameter', _ , _} <- List] of
             [Entry] ->
                 public_key:pem_entry_decode(Entry);
@@ -374,9 +374,9 @@ dh_file(DbHandle, DHParamFile) ->
     end.
 
 session_cb_init_args(client) ->
-    case application:get_env(ssl, client_session_cb_init_args) of
+    case application:get_env(xssl, client_session_cb_init_args) of
         undefined ->
-            case application:get_env(ssl, session_cb_init_args) of
+            case application:get_env(xssl, session_cb_init_args) of
                 {ok, Args} when is_list(Args) ->
                     Args;
                 _  ->
@@ -386,9 +386,9 @@ session_cb_init_args(client) ->
             Args
     end;
 session_cb_init_args(server) ->
-    case application:get_env(ssl, server_session_cb_init_args) of
+    case application:get_env(xssl, server_session_cb_init_args) of
         undefined ->
-            case application:get_env(ssl, session_cb_init_args) of
+            case application:get_env(xssl, session_cb_init_args) of
                 {ok, Args} when is_list(Args) ->
                     Args;
                 _  ->
@@ -399,7 +399,7 @@ session_cb_init_args(server) ->
     end.
 
 session_lifetime(_Role) ->
-    case application:get_env(ssl, session_lifetime) of
+    case application:get_env(xssl, session_lifetime) of
 	{ok, Time} when is_integer(Time) ->
             Time;
         _  ->
@@ -407,14 +407,14 @@ session_lifetime(_Role) ->
     end.
 
 max_session_cache_size(client) ->
-    case application:get_env(ssl, session_cache_client_max) of
+    case application:get_env(xssl, session_cache_client_max) of
 	{ok, Size} when is_integer(Size) ->
 	    Size;
 	_ ->
 	   ?DEFAULT_MAX_SESSION_CACHE
     end;
 max_session_cache_size(server) ->
-    case application:get_env(ssl, session_cache_server_max) of
+    case application:get_env(xssl, session_cache_server_max) of
 	{ok, Size} when is_integer(Size) ->
 	    Size;
 	_ ->
@@ -422,14 +422,14 @@ max_session_cache_size(server) ->
     end.
 
 session_cb_opts(client = Role)->
-    case application:get_env(ssl, session_cb, ssl_client_session_cache_db) of
+    case application:get_env(xssl, session_cb, ssl_client_session_cache_db) of
         ssl_client_session_cache_db = ClientCb ->
             {ClientCb, []};
         ClientCb ->
             {ClientCb, session_cb_init_args(Role)}
     end;
 session_cb_opts(server = Role) ->
-    case application:get_env(ssl, session_cb, ssl_server_session_cache_db) of
+    case application:get_env(xssl, session_cb, ssl_server_session_cache_db) of
         ssl_server_session_cache_db = ServerCb ->
             {ServerCb, []};
         ServerCb ->

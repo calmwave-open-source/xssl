@@ -37,7 +37,7 @@
          size/1]).
 
 %%--------------------------------------------------------------------
-%% Description: Return table reference. Called by ssl_manager process.
+%% Description: Return table reference. Called by xssl_manager process.
 %%--------------------------------------------------------------------
 init(Options) ->
     ets:new(cache_name(proplists:get_value(role, Options)), [ordered_set, protected]).
@@ -65,14 +65,14 @@ lookup(Cache, Key) ->
 
 %%--------------------------------------------------------------------
 %% Description: Caches a new session or updates a already cached one.
-%% Will only be called from the ssl_manager process.
+%% Will only be called from the xssl_manager process.
 %%--------------------------------------------------------------------
 update(Cache, Key, Session) ->
     ets:insert(Cache, {Key, Session}).
 
 %%--------------------------------------------------------------------
 %% Description: Deletes a cache entry.
-%% Will only be called from the ssl_manager process.
+%% Will only be called from the xssl_manager process.
 %%--------------------------------------------------------------------
 delete(Cache, Key) ->
     ets:delete(Cache, Key).

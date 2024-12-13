@@ -48,11 +48,11 @@
                      port                  :: integer(),
                      socket                :: port() | tuple(), %% TODO: xdtls socket
                      cert_db               :: reference() | 'undefined',
-                     session_cache         :: ssl_manager:db_handle(),
+                     session_cache         :: xssl_manager:db_handle(),
                      session_cache_cb      :: atom(),
                      crl_db                :: term(),
-                     file_ref_db          :: ssl_manager:db_handle(),
-                     cert_db_ref          :: ssl_manager:certdb_ref() | 'undefined',
+                     file_ref_db          :: xssl_manager:db_handle(),
+                     cert_db_ref          :: xssl_manager:certdb_ref() | 'undefined',
                      trackers              :: [{atom(), pid()}] | 'undefined' %% Tracker process for listen socket
                     }).
 

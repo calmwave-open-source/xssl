@@ -283,7 +283,7 @@ certify(internal, #certificate_request{} = CertRequest,
                session = Session0,
                ssl_options = #{signature_algs := SupportedHashSigns}} = State) ->
     TLSVersion = xssl:tls_version(Version),
-    CertKeyPairs = ssl_certificate:available_cert_key_pairs(CertKeyAlts, xssl:tls_version(Version)),
+    CertKeyPairs = xssl_certificate:available_cert_key_pairs(CertKeyAlts, xssl:tls_version(Version)),
     Session = select_client_cert_key_pair(Session0, CertRequest, CertKeyPairs,
                                           SupportedHashSigns, TLSVersion,
                                           CertDbHandle, CertDbRef),
@@ -515,7 +515,7 @@ select_client_cert_key_pair(Session0, #certificate_request{certificate_authoriti
             select_client_cert_key_pair(Session0, CertRequest, Rest, SupportedHashSigns,
                                         TLSVersion, CertDbHandle, CertDbRef, Default);
         SelectedHashSign ->
-            case ssl_certificate:handle_cert_auths(Certs, CertAuths, CertDbHandle, CertDbRef) of
+            case xssl_certificate:handle_cert_auths(Certs, CertAuths, CertDbHandle, CertDbRef) of
                 {ok, EncodedChain} ->
                     Session0#session{sign_alg = SelectedHashSign,
                                      own_certificates = EncodedChain,
@@ -842,7 +842,7 @@ maybe_register_session(#{verify := verify_peer,
                          reuse_sessions := Reuse} = SslOpts,
                        Host, Port, _, #session{is_resumable = false} = Session0) when Reuse =/= false ->
     Session = Session0#session{is_resumable = true},
-    ssl_manager:register_session(host_id(Host, SslOpts), Port, Session, reg_type(Reuse)),
+    xssl_manager:register_session(host_id(Host, SslOpts), Port, Session, reg_type(Reuse)),
     Session;
 maybe_register_session(_,_,_,_, Session) ->
     Session.

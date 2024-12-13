@@ -59,20 +59,20 @@ init([]) ->
 %%--------------------------------------------------------------------
 
 tls_connection_child_spec() ->
-    #{id       => dist_tls_connection_sup,
-      start    => {tls_connection_sup, start_link_dist, []},
+    #{id       => xdist_tls_connection_sup,
+      start    => {xtls_connection_sup, start_link_dist, []},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [tls_connection_sup],
+      modules  => [xtls_connection_sup],
       type     => supervisor
      }.
  
 server_instance_child_spec() ->
     #{id       => xtls_dist_server_sup,
-      start    => {tls_dist_server_sup, start_link, []},
+      start    => {xtls_dist_server_sup, start_link, []},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [tls_dist_server_sup],
+      modules  => [xtls_dist_server_sup],
       type     => supervisor
      }.
 

@@ -150,7 +150,7 @@ init([Role, Sender, Tab, Host, Port, Socket, Options,  User, CbInfo]) ->
                         ssl_options = SslOptions,
                         session = Session0} =
             xssl_gen_statem:init_ssl_config(State0#state.ssl_options, Role, State0),
-        CertKeyPairs = ssl_certificate:available_cert_key_pairs(CertKeyAlts),
+        CertKeyPairs = xssl_certificate:available_cert_key_pairs(CertKeyAlts),
         Session = ssl_session:client_select_session({Host, Port, SslOptions}, Cache,
                                                     CacheCb, Session0, CertKeyPairs),
         State = State1#state{session = Session},
@@ -269,7 +269,7 @@ initial_hello({call, From}, {start, {Opts, EmOpts}, Timeout},
 	initial_hello({call, From}, {start, Timeout},
                       State#state{ssl_options = SslOpts,
                                   socket_options =
-                                      ssl_config:new_emulated(EmOpts, SockOpts)})
+                                      xssl_config:new_emulated(EmOpts, SockOpts)})
     catch throw:Error ->
             {stop_and_reply, {shutdown, normal}, {reply, From, {error, Error}}, State0}
     end;
@@ -406,7 +406,7 @@ connection(internal, #hello_request{},
 		  connection_states = ConnectionStates} = State0) ->
     try xtls_sender:peer_renegotiate(Pid) of
         {ok, Write} ->
-            CertKeyPairs = ssl_certificate:available_cert_key_pairs(CertKeyAlts),
+            CertKeyPairs = xssl_certificate:available_cert_key_pairs(CertKeyAlts),
             Session = ssl_session:client_select_session({Host, Port, SslOpts}, Cache,
                                                         CacheCb, Session0, CertKeyPairs),
             Hello = xtls_handshake:client_hello(Host, Port, ConnectionStates, SslOpts,

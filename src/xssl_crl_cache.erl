@@ -65,7 +65,7 @@ select(GenNames, CRLDbHandle) when is_list(GenNames) ->
                           []
                   end, GenNames);
 select(Issuer, {{_Cache, Mapping},_}) ->
-    case ssl_pkix_db:lookup(Issuer, Mapping) of
+    case xssl_pkix_db:lookup(Issuer, Mapping) of
 	undefined ->
 	    [];
 	CRLs ->
@@ -134,17 +134,17 @@ delete({file, File}) ->
 	    PemEntries = public_key:pem_decode(PemBin),
 	    CRLs = [ CRL || {'CertificateList', CRL, not_encrypted} 
 				<- PemEntries],
-	    ssl_manager:delete_crls({?NO_DIST_POINT, CRLs});
+	    xssl_manager:delete_crls({?NO_DIST_POINT, CRLs});
 	Error ->
 	    Error
     end;
 delete({der, CRLs}) ->	
-    ssl_manager:delete_crls({?NO_DIST_POINT, CRLs});
+    xssl_manager:delete_crls({?NO_DIST_POINT, CRLs});
 
 delete(URI) ->
     case uri_string:normalize(URI, [return_map]) of
 	#{scheme := "http", path := Path} ->
-	    ssl_manager:delete_crls(string:trim(Path, leading, "/"));
+	    xssl_manager:delete_crls(string:trim(Path, leading, "/"));
 	_ ->
 	    {error, {only_http_distribution_points_supported, URI}}
     end.
@@ -155,7 +155,7 @@ delete(URI) ->
 do_insert(URI, CRLs) ->
     case uri_string:normalize(URI, [return_map]) of
 	#{scheme := "http", path := Path} ->
-	    ssl_manager:insert_crls(string:trim(Path, leading, "/"), CRLs);
+	    xssl_manager:insert_crls(string:trim(Path, leading, "/"), CRLs);
 	_ ->
 	    {error, {only_http_distribution_points_supported, URI}}
     end.
@@ -212,7 +212,7 @@ cache_lookup(_, undefined) ->
     [];
 cache_lookup(URL, {{Cache, _}, _}) ->
     #{path :=  Path} = uri_string:normalize(URL, [return_map]),
-    case ssl_pkix_db:lookup(string:trim(Path, leading, "/"), Cache) of
+    case xssl_pkix_db:lookup(string:trim(Path, leading, "/"), Cache) of
 	undefined ->
 	    [];
 	[CRLs] ->

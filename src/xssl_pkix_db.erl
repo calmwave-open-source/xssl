@@ -44,7 +44,7 @@
 %%====================================================================
 
 %%--------------------------------------------------------------------
--spec create(atom()) -> [ssl_manager:db_handle(),...].
+-spec create(atom()) -> [xssl_manager:db_handle(),...].
 %% 
 %% Description: Creates a new certificate db.
 %% Note: lookup_trusted_cert/4 may be called from any process but only
@@ -59,7 +59,7 @@ create(PEMCacheName) ->
      {ets:new(ssl_otp_ca_file_ref, [set, public]),
       ets:new(ssl_otp_ca_ref_file_mapping, [set, protected])
      },
-     %% Lookups in named table owned by ssl_pem_cache process
+     %% Lookups in named table owned by xssl_pem_cache process
      PEMCacheName,
      %% Default cache
      {ets:new(ssl_otp_crl_cache, [set, protected]),
@@ -70,7 +70,7 @@ create_pem_cache(Name) ->
     ets:new(Name, [named_table, set, protected]).
 
 %%--------------------------------------------------------------------
--spec remove([ssl_manager:db_handle()]) -> ok.
+-spec remove([xssl_manager:db_handle()]) -> ok.
 %%
 %% Description: Removes database db  
 %%--------------------------------------------------------------------
@@ -81,8 +81,8 @@ remove(Dbs) ->
 		     (undefined) -> 
 			  ok;
                      (Name) when is_atom(Name) ->
-                          NormalName = ssl_pem_cache:name(normal),
-                          DistName = ssl_pem_cache:name(dist),
+                          NormalName = xssl_pem_cache:name(normal),
+                          DistName = xssl_pem_cache:name(dist),
                           case Name of
                               NormalName ->
                                   ok;
@@ -96,7 +96,7 @@ remove(Dbs) ->
 		  end, Dbs).
 
 %%--------------------------------------------------------------------
--spec lookup_trusted_cert(ssl_manager:db_handle(), ssl_manager:certdb_ref(),
+-spec lookup_trusted_cert(xssl_manager:db_handle(), xssl_manager:certdb_ref(),
                           SerialNumber::pos_integer(), public_key:issuer_name()) ->
 				 undefined | {ok, public_key:combined_cert()}.
 
@@ -125,7 +125,7 @@ lookup_trusted_cert(_DbHandle, {extracted,Certs}, SerialNumber, Issuer) ->
 
 %%--------------------------------------------------------------------
 -spec add_trusted_certs(pid(), {erlang:timestamp(), string()} |
-			{der, list()}, [ssl_manager:db_handle()]) -> {ok, [ssl_manager:db_handle()]}.
+			{der, list()}, [xssl_manager:db_handle()]) -> {ok, [xssl_manager:db_handle()]}.
 %%
 %% Description: Adds the trusted certificates from file <File> to the
 %% runtime database. Returns Ref that should be handed to lookup_trusted_cert
@@ -151,7 +151,7 @@ add_trusted_certs(_Pid, File, [_, {RefDb, FileMapDb} | _] = Db) ->
 refresh_trusted_certs(File, [CertsDb, {_, FileMapDb} | _], PemCache) ->
     case lookup(File, FileMapDb) of
         [Ref] ->
-            Certs = ssl_certificate:file_to_certificats(File, PemCache),
+            Certs = xssl_certificate:file_to_certificats(File, PemCache),
             KeyList = select_certentries_by_ref(Ref,CertsDb),
             update_certs(Ref, Certs, KeyList, CertsDb);
         undefined ->
@@ -193,7 +193,7 @@ decode_pem_file(File) ->
     end.
 
 %%--------------------------------------------------------------------
--spec remove_trusted_certs(reference(), ssl_manager:db_handle()) -> ok.
+-spec remove_trusted_certs(reference(), xssl_manager:db_handle()) -> ok.
 %%
 %% Description: Removes all trusted certificates referenced by <Ref>.
 %%--------------------------------------------------------------------
@@ -201,7 +201,7 @@ remove_trusted_certs(Ref, CertsDb) ->
     remove_certs(Ref, CertsDb).
 
 %%--------------------------------------------------------------------
--spec remove(term(), ssl_manager:db_handle()) -> ok.
+-spec remove(term(), xssl_manager:db_handle()) -> ok.
 %%
 %% Description: Removes an element in a <Db>.
 %%--------------------------------------------------------------------
@@ -210,7 +210,7 @@ remove(Key, Db) ->
     ok.
 
 %%--------------------------------------------------------------------
--spec remove(term(), term(), ssl_manager:db_handle()) -> ok.
+-spec remove(term(), term(), xssl_manager:db_handle()) -> ok.
 %%
 %% Description: Removes an element in a <Db>.
 %%--------------------------------------------------------------------
@@ -219,7 +219,7 @@ remove(Key, Data, Db) ->
     ok.
 
 %%--------------------------------------------------------------------
--spec lookup(term(), ssl_manager:db_handle()) -> [term()] | undefined.
+-spec lookup(term(), xssl_manager:db_handle()) -> [term()] | undefined.
 %%
 %% Description: Looks up an element in a <Db>.
 %%--------------------------------------------------------------------
@@ -234,7 +234,7 @@ lookup(Key, Db) ->
 	    [Pick(Data) || Data <- Contents]
     end.
 %%--------------------------------------------------------------------
--spec foldl(fun((_,_) -> term()), term(), ssl_manager:db_handle()) -> term().
+-spec foldl(fun((_,_) -> term()), term(), xssl_manager:db_handle()) -> term().
 %%
 %% Description: Calls Fun(Elem, AccIn) on successive elements of the
 %% cache, starting with AccIn == Acc0. Fun/2 must return a new
@@ -246,7 +246,7 @@ foldl(Fun, Acc0, Cache) ->
     ets:foldl(Fun, Acc0, Cache).
 
 %%--------------------------------------------------------------------
--spec select_certentries_by_ref(reference(), ssl_manager:db_handle()) -> term().
+-spec select_certentries_by_ref(reference(), xssl_manager:db_handle()) -> term().
 %%
 %% Description: Select certs entries originating from same source
 %%--------------------------------------------------------------------
@@ -254,7 +254,7 @@ select_certentries_by_ref(Ref, Cache) ->
     ets:select(Cache, [{{{Ref,'_', '_'}, '_'},[],['$_']}]).
 
 %%--------------------------------------------------------------------
--spec select_certs_by_ref(reference(), ssl_manager:db_handle()) -> term().
+-spec select_certs_by_ref(reference(), xssl_manager:db_handle()) -> term().
 %%
 %% Description: Select certs originating from same source
 %%--------------------------------------------------------------------
@@ -262,7 +262,7 @@ select_certs_by_ref(Ref, Cache) ->
     ets:select(Cache, [{{{Ref,'_','_'},'$1'},[],['$1']}]).
 
 %%--------------------------------------------------------------------
--spec ref_count(term(), ssl_manager:db_handle(), integer()) -> integer().
+-spec ref_count(term(), xssl_manager:db_handle(), integer()) -> integer().
 %%
 %% Description: Updates a reference counter in a <Db>.
 %%--------------------------------------------------------------------
@@ -274,7 +274,7 @@ ref_count(Key, Db, N) ->
     ets:update_counter(Db,Key,N).
 
 %%--------------------------------------------------------------------
--spec clear(ssl_manager:db_handle()) -> ok.
+-spec clear(xssl_manager:db_handle()) -> ok.
 %%
 %% Description: Clears the cache
 %%--------------------------------------------------------------------
@@ -283,7 +283,7 @@ clear(Db) ->
     ok.
 
 %%--------------------------------------------------------------------
--spec db_size(ssl_manager:db_handle()) -> integer().
+-spec db_size(xssl_manager:db_handle()) -> integer().
 %%
 %% Description: Returns the size of the db
 %%--------------------------------------------------------------------
@@ -291,7 +291,7 @@ db_size(Db) ->
     ets:info(Db, size).
 
 %%--------------------------------------------------------------------
--spec insert(Key::term(), Data::term(), Db::ssl_manager:db_handle()) -> ok.
+-spec insert(Key::term(), Data::term(), Db::xssl_manager:db_handle()) -> ok.
 %%
 %% Description: Inserts data into <Db>
 %%--------------------------------------------------------------------
@@ -356,7 +356,7 @@ new_trusted_cert_entry(File, [CertsDb, RefsDb, _ | _]) ->
         {ok, Content} ->
             Ref = make_ref(),
             init_ref_db(Ref, File, RefsDb),
-            ok = ssl_pem_cache:insert(File, Content),
+            ok = xssl_pem_cache:insert(File, Content),
             add_certs_from_pem(Content, Ref, CertsDb),
             {ok, Ref};
         Error ->

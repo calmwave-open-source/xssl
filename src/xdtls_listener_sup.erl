@@ -47,7 +47,7 @@ start_child(Args) ->
     supervisor:start_child(?MODULE, Args).
 
 lookup_listener(IP, Port) ->
-    try ets:lookup(dtls_listener_sup, {IP, Port}) of
+    try ets:lookup(xdtls_listener_sup, {IP, Port}) of
         [] ->
             undefined;
         [{{IP, Port}, {Owner, Handler}}] ->
@@ -64,7 +64,7 @@ lookup_listener(IP, Port) ->
                             {ok, Handler}
                     end;
                 false ->
-                    ets:delete(dtls_listener_sup, {IP, Port}),
+                    ets:delete(xdtls_listener_sup, {IP, Port}),
                     undefined
             end
     catch _:_ ->
@@ -72,22 +72,22 @@ lookup_listener(IP, Port) ->
     end.
 
 register_listener(OwnerAndListner, IP, Port) ->
-    ets:insert(dtls_listener_sup, {{IP, Port}, OwnerAndListner}).
+    ets:insert(xdtls_listener_sup, {{IP, Port}, OwnerAndListner}).
 
 %%%=========================================================================
 %%%  Supervisor callback
 %%%=========================================================================
 init(_) ->
-    ets:new(dtls_listener_sup, [named_table, public, set]),    
+    ets:new(xdtls_listener_sup, [named_table, public, set]),    
     SupFlags = #{strategy  => simple_one_for_one, 
                  intensity =>   0,
                  period    => 3600
                 },
     ChildSpecs = [#{id       => undefined,
-                    start    => {dtls_packet_demux, start_link, []},
+                    start    => {xdtls_packet_demux, start_link, []},
                     restart  => temporary, 
                     shutdown => 4000,
-                    modules  => [dtls_packet_demux],
+                    modules  => [xdtls_packet_demux],
                     type     => worker
                    }],     
     {ok, {SupFlags, ChildSpecs}}.

@@ -66,10 +66,10 @@ init(_) ->
                  period    => 3600
                 },
     ChildSpecs = [#{id       => undefined,
-                    start    => {tls_server_session_ticket, start_link, []},
+                    start    => {xtls_server_session_ticket, start_link, []},
                     restart  => transient, 
                     shutdown => 4000,
-                    modules  => [tls_server_session_ticket],
+                    modules  => [xtls_server_session_ticket],
                     type     => worker
                    }], 
     {ok, {SupFlags, ChildSpecs}}.

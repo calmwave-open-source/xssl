@@ -60,18 +60,18 @@ init([]) ->
 
 xtls_sup_child_spec() ->
     #{id => xtls_sup,
-      start => {tls_sup, start_link, []},
+      start => {xtls_sup, start_link, []},
       restart => permanent,
       shutdown => 4000,
-      modules => [tls_sup],
+      modules => [xtls_sup],
       type => supervisor
      }.
 
 xdtls_sup_child_spec() ->
     #{id => xdtls_sup,
-      start => {dtls_sup, start_link, []},
+      start => {xdtls_sup, start_link, []},
       restart => permanent,
       shutdown => 4000,
-      modules => [dtls_sup],
+      modules => [xdtls_sup],
       type => supervisor
      }.

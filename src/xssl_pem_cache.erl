@@ -112,7 +112,7 @@ insert(File, Content) ->
 %%--------------------------------------------------------------------
 clear() ->
     %% Not supported for distribution at the moement, should it be?
-    put(ssl_pem_cache, name(normal)),
+    put(xssl_pem_cache, name(normal)),
     call(unconditionally_clear_pem_cache).
 
 -spec invalidate_pem(File::binary()) -> ok.
@@ -131,9 +131,9 @@ invalidate_pem(File) ->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([Name]) ->
-    put(ssl_pem_cache, Name),
+    put(xssl_pem_cache, Name),
     process_flag(trap_exit, true),
-    PemCache = ssl_pkix_db:create_pem_cache(Name),
+    PemCache = xssl_pkix_db:create_pem_cache(Name),
     Interval = pem_check_interval(),
     erlang:send_after(Interval, self(), clear_pem_cache),
     erlang:system_time(second),
@@ -155,8 +155,8 @@ init([Name]) ->
 %%--------------------------------------------------------------------
 handle_call({unconditionally_clear_pem_cache, _},_, 
 	    #state{pem_cache = PemCache} = State) ->
-    ssl_pkix_db:clear(PemCache),
-    Result = ssl_manager:refresh_trusted_db(ssl_manager_type()),
+    xssl_pkix_db:clear(PemCache),
+    Result = xssl_manager:refresh_trusted_db(xssl_manager_type()),
     {reply, Result,  State}.
 
 %%--------------------------------------------------------------------
@@ -168,12 +168,12 @@ handle_call({unconditionally_clear_pem_cache, _},_,
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
 handle_cast({cache_pem, File, Content}, #state{pem_cache = Db} = State) ->
-    ssl_pkix_db:insert(File, Content, Db), 
+    xssl_pkix_db:insert(File, Content, Db), 
     {noreply, State};
 
 handle_cast({invalidate_pem, File}, #state{pem_cache = Db} = State) ->
-    ssl_pkix_db:remove(File, Db),
-    ssl_manager:refresh_trusted_db(ssl_manager_type(), File),
+    xssl_pkix_db:remove(File, Db),
+    xssl_manager:refresh_trusted_db(xssl_manager_type(), File),
     {noreply, State}.
 
 
@@ -219,18 +219,18 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 call(Msg) ->
-    gen_server:call(get(ssl_pem_cache), {Msg, self()}, infinity).
+    gen_server:call(get(xssl_pem_cache), {Msg, self()}, infinity).
 
 cast(Msg) ->
-    gen_server:cast(get(ssl_pem_cache), Msg).
+    gen_server:cast(get(xssl_pem_cache), Msg).
 
 start_pem_cache_validator(PemCache, CheckPoint) ->
     spawn_link(?MODULE, init_pem_cache_validator, 
-	       [[get(ssl_pem_cache), PemCache, CheckPoint]]).
+	       [[get(xssl_pem_cache), PemCache, CheckPoint]]).
 
 init_pem_cache_validator([CacheName, PemCache, CheckPoint]) ->
-    put(ssl_pem_cache, CacheName),
-    ssl_pkix_db:foldl(fun pem_cache_validate/2,
+    put(xssl_pem_cache, CacheName),
+    xssl_pkix_db:foldl(fun pem_cache_validate/2,
 		      CheckPoint, PemCache).
 
 pem_cache_validate({File, _}, CheckPoint) ->
@@ -243,7 +243,7 @@ pem_cache_validate({File, _}, CheckPoint) ->
     CheckPoint.
 
 pem_check_interval() ->
-    case application:get_env(ssl, ssl_pem_cache_clean) of
+    case application:get_env(xssl, xssl_pem_cache_clean) of
 	{ok, Interval} when is_integer(Interval) ->
 	    Interval;
 	_  ->
@@ -251,15 +251,15 @@ pem_check_interval() ->
     end.
 
 bypass_cache() ->
-    case application:get_env(ssl, bypass_pem_cache) of
+    case application:get_env(xssl, bypass_pem_cache) of
 	{ok, Bool} when is_boolean(Bool) ->
 	    Bool;
 	_ ->
 	    false
     end.
 
-ssl_manager_type() ->
-    case get(ssl_pem_cache) of
+xssl_manager_type() ->
+    case get(xssl_pem_cache) of
         ?MODULE ->
             normal;
         _ ->

@@ -32,12 +32,12 @@
 
 trusted_cert_and_path(CRL, {SerialNumber, Issuer}, CertPath, {Db, DbRef}) ->
     %% CRL issuer cert ID is known
-    case ssl_pkix_db:lookup_trusted_cert(Db, DbRef, SerialNumber, Issuer) of
+    case xssl_pkix_db:lookup_trusted_cert(Db, DbRef, SerialNumber, Issuer) of
 	undefined ->
             %% But not found in our database
 	    search_certpath(CRL, CertPath, Db, DbRef);
 	{ok, #cert{otp=OtpCert}}  ->
-	    {ok, Root, Chain} = ssl_certificate:certificate_chain(OtpCert, Db, DbRef),
+	    {ok, Root, Chain} = xssl_certificate:certificate_chain(OtpCert, Db, DbRef),
 	    {ok, Root,  lists:reverse(Chain)}
     end;
 trusted_cert_and_path(CRL, issuer_not_found, CertPath, {Db, DbRef}) ->
@@ -52,7 +52,7 @@ trusted_cert_and_path(CRL, issuer_not_found, CertPath, {Db, DbRef}) ->
                 end,
             case search_db(IsIssuerFun, Db, DbRef) of
                 {ok, OtpCert} ->
-                    {ok, Root, Chain} = ssl_certificate:certificate_chain(OtpCert, Db, DbRef),
+                    {ok, Root, Chain} = xssl_certificate:certificate_chain(OtpCert, Db, DbRef),
                     {ok, Root, lists:reverse(Chain)};
                 {error, issuer_not_found} ->
                     {error, unknown_ca}
@@ -69,7 +69,7 @@ search_certpath(CRL, CertPath, Db, DbRef) ->
 	end,
     case find_issuer(IsIssuerFun, certpath, CertPath) of
 	{ok, OtpCert} ->
-	    {ok, Root, Chain} = ssl_certificate:certificate_chain(OtpCert, Db, DbRef),
+	    {ok, Root, Chain} = xssl_certificate:certificate_chain(OtpCert, Db, DbRef),
 	    {ok, Root, lists:reverse(Chain)};
 	{error, issuer_not_found} ->
             {error, unknown_ca}
@@ -98,7 +98,7 @@ find_issuer(IsIssuerFun, extracted, CertsData) ->
             Result
     end;
 find_issuer(IsIssuerFun, Db, _) ->  
-    try ssl_pkix_db:foldl(IsIssuerFun, issuer_not_found, Db) of
+    try xssl_pkix_db:foldl(IsIssuerFun, issuer_not_found, Db) of
         issuer_not_found ->
             {error, issuer_not_found}
     catch

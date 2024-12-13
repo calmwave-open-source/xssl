@@ -99,7 +99,7 @@ name(dist) ->
 %%--------------------------------------------------------------------
 start_link(Opts) ->
     MangerName = name(normal),
-    CacheName = ssl_pem_cache:name(normal),
+    CacheName = xssl_pem_cache:name(normal),
     gen_server:start_link({local, MangerName}, 
 			  ?MODULE, [MangerName, CacheName, Opts], []).
 
@@ -111,7 +111,7 @@ start_link(Opts) ->
 %%--------------------------------------------------------------------
 start_link_dist(Opts) ->
     DistMangerName = name(dist),
-    DistCacheName = ssl_pem_cache:name(dist),
+    DistCacheName = xssl_pem_cache:name(dist),
     gen_server:start_link({local, DistMangerName}, 
 			  ?MODULE, [DistMangerName, DistCacheName, Opts], []).
 
@@ -123,7 +123,7 @@ start_link_dist(Opts) ->
 %% Description: Do necessary initializations for a new connection.
 %%--------------------------------------------------------------------
 connection_init({der, _} = Trustedcerts, Role, CRLCache) ->
-    {ok, Extracted} = ssl_pkix_db:extract_trusted_certs(Trustedcerts),
+    {ok, Extracted} = xssl_pkix_db:extract_trusted_certs(Trustedcerts),
     call({connection_init, Extracted, Role, CRLCache});
 connection_init(Trustedcerts, Role, CRLCache) ->
     call({connection_init, Trustedcerts, Role, CRLCache}).
@@ -134,13 +134,13 @@ connection_init(Trustedcerts, Role, CRLCache) ->
 %% Description: Cache a pem file and return its content.
 %%--------------------------------------------------------------------
 cache_pem_file(File, DbHandle) ->
-    case ssl_pkix_db:lookup(File, DbHandle) of
+    case xssl_pkix_db:lookup(File, DbHandle) of
 	[Content]  ->
 	    {ok, Content};
 	undefined ->
-            case ssl_pkix_db:decode_pem_file(File) of
+            case xssl_pkix_db:decode_pem_file(File) of
                 {ok, Content} ->
-                    ssl_pem_cache:insert(File, Content),
+                    xssl_pem_cache:insert(File, Content),
                     {ok, Content};
                 Error ->
                     Error
@@ -156,31 +156,31 @@ cache_pem_file(File, DbHandle) ->
 %% serialnumber(), issuer()}.
 %% --------------------------------------------------------------------
 lookup_trusted_cert(DbHandle, Ref, SerialNumber, Issuer) ->
-    ssl_pkix_db:lookup_trusted_cert(DbHandle, Ref, SerialNumber, Issuer).
+    xssl_pkix_db:lookup_trusted_cert(DbHandle, Ref, SerialNumber, Issuer).
 
 %%--------------------------------------------------------------------
 -spec clean_cert_db(reference(), binary()) -> ok.
 %%
-%% Description: Send clean request of cert db to ssl_manager process should
+%% Description: Send clean request of cert db to xssl_manager process should
 %% be called by ssl-connection processes. 
 %%--------------------------------------------------------------------
 clean_cert_db(Ref, File) ->
-    erlang:send_after(?CLEAN_CERT_DB, get(ssl_manager), 
+    erlang:send_after(?CLEAN_CERT_DB, get(xssl_manager), 
 		      {clean_cert_db, Ref, File}),
     ok.
 
 %%--------------------------------------------------------------------
 -spec refresh_trusted_db(normal | dist) -> ok.
 %%
-%% Description: Send refresh of trusted cert db to ssl_manager process should
+%% Description: Send refresh of trusted cert db to xssl_manager process should
 %% be called by ssl-connection processes.
 %%--------------------------------------------------------------------
 refresh_trusted_db(ManagerType) ->
-    put(ssl_manager, name(ManagerType)),
+    put(xssl_manager, name(ManagerType)),
     call(refresh_trusted_db).
 
 refresh_trusted_db(ManagerType, File) ->
-    put(ssl_manager, name(ManagerType)),
+    put(xssl_manager, name(ManagerType)),
     call({refresh_trusted_db, File}).
 
 %%--------------------------------------------------------------------
@@ -212,19 +212,19 @@ invalidate_session(Port, Session) ->
 insert_crls(Path, CRLs)->
     insert_crls(Path, CRLs, normal).
 insert_crls(?NO_DIST_POINT_PATH = Path, CRLs, ManagerType)->
-    put(ssl_manager, name(ManagerType)),
+    put(xssl_manager, name(ManagerType)),
     cast({insert_crls, Path, CRLs});
 insert_crls(Path, CRLs, ManagerType)->
-    put(ssl_manager, name(ManagerType)),
+    put(xssl_manager, name(ManagerType)),
     call({insert_crls, Path, CRLs}).
 
 delete_crls(Path)->
     delete_crls(Path, normal).
 delete_crls(?NO_DIST_POINT_PATH = Path, ManagerType)->
-    put(ssl_manager, name(ManagerType)),
+    put(xssl_manager, name(ManagerType)),
     cast({delete_crls, Path});
 delete_crls(Path, ManagerType)->
-    put(ssl_manager, name(ManagerType)),
+    put(xssl_manager, name(ManagerType)),
     call({delete_crls, Path}).
 
 %%====================================================================
@@ -239,15 +239,15 @@ delete_crls(Path, ManagerType)->
 %% Description: Initiates the server
 %%--------------------------------------------------------------------
 init([ManagerName, PemCacheName, Opts]) ->
-    put(ssl_manager, ManagerName),
-    put(ssl_pem_cache, PemCacheName),
+    put(xssl_manager, ManagerName),
+    put(xssl_pem_cache, PemCacheName),
     process_flag(trap_exit, true),
 
     #{session_cb := DefaultCacheCb,
       session_cb_init_args := DefaultCacheCbInitArgs,
       lifetime := DefaultSessLifeTime,
       max := ClientSessMax
-     } = ssl_config:pre_1_3_session_opts(client),
+     } = xssl_config:pre_1_3_session_opts(client),
     CacheCb = proplists:get_value(session_cb, Opts, DefaultCacheCb),
     SessionLifeTime =  
 	proplists:get_value(session_lifetime, Opts, DefaultSessLifeTime),
@@ -255,7 +255,7 @@ init([ManagerName, PemCacheName, Opts]) ->
 	CacheCb:init([{role, client} | 
 		      proplists:get_value(session_cb_init_args, Opts, DefaultCacheCbInitArgs)]),
 
-    CertDb = ssl_pkix_db:create(PemCacheName),
+    CertDb = xssl_pkix_db:create(PemCacheName),
     Timer = erlang:send_after(SessionLifeTime * 1000 + 5000, 
 			      self(), validate_sessions),
     {ok, #state{certificate_db = CertDb,
@@ -306,23 +306,23 @@ handle_call({{connection_init, Trustedcerts, Role, {CRLCb, UserCRLDb}}, Pid}, _F
 
 handle_call({{insert_crls, Path, CRLs}, _}, _From,   
 	    #state{certificate_db = Db} = State) ->
-    ssl_pkix_db:add_crls(Db, Path, CRLs),
+    xssl_pkix_db:add_crls(Db, Path, CRLs),
     {reply, ok, State};
 
 handle_call({{delete_crls, CRLsOrPath}, _}, _From,   
 	    #state{certificate_db = Db} = State) ->
-    ssl_pkix_db:remove_crls(Db, CRLsOrPath),
+    xssl_pkix_db:remove_crls(Db, CRLsOrPath),
     {reply, ok, State};
 handle_call({{register_session, Host, Port, Session}, _}, _, State0) ->
     State = client_register_session(Host, Port, Session, State0), 
     {reply, ok, State};
 handle_call({refresh_trusted_db, _}, _, #state{certificate_db = Db} = State) ->
-    PemCache = get(ssl_pem_cache),
-    ssl_pkix_db:refresh_trusted_certs(Db, PemCache),
+    PemCache = get(xssl_pem_cache),
+    xssl_pkix_db:refresh_trusted_certs(Db, PemCache),
     {reply, ok, State};
 handle_call({{refresh_trusted_db, File}, _}, _, #state{certificate_db = Db} = State) ->
-    PemCache = get(ssl_pem_cache),
-    ssl_pkix_db:refresh_trusted_certs(File, Db, PemCache),
+    PemCache = get(xssl_pem_cache),
+    xssl_pkix_db:refresh_trusted_certs(File, Db, PemCache),
     {reply, ok, State}.
 
 %%--------------------------------------------------------------------
@@ -344,12 +344,12 @@ handle_cast({invalidate_session, Host, Port,
     invalidate_session(Cache, CacheCb, {{Host, Port}, ID}, Session, State);
 handle_cast({insert_crls, Path, CRLs},   
 	    #state{certificate_db = Db} = State) ->
-    ssl_pkix_db:add_crls(Db, Path, CRLs),
+    xssl_pkix_db:add_crls(Db, Path, CRLs),
     {noreply, State};
 
 handle_cast({delete_crls, CRLsOrPath},   
 	    #state{certificate_db = Db} = State) ->
-    ssl_pkix_db:remove_crls(Db, CRLsOrPath),
+    xssl_pkix_db:remove_crls(Db, CRLsOrPath),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -374,7 +374,7 @@ handle_info(validate_sessions, #state{session_cache_client_cb = CacheCb,
 handle_info({clean_cert_db, Ref, File},
 	    #state{certificate_db = [CertDb, {RefDb, FileMapDb} | _]} = State) ->
     
-    case ssl_pkix_db:lookup(Ref, RefDb) of
+    case xssl_pkix_db:lookup(Ref, RefDb) of
 	undefined -> %% Already cleaned
 	    ok;
 	_ ->
@@ -399,7 +399,7 @@ terminate(_Reason, #state{certificate_db = Db,
 			  session_cache_client_cb = CacheCb,
 			  session_validation_timer = Timer}) ->
     erlang:cancel_timer(Timer),
-    ssl_pkix_db:remove(Db),
+    xssl_pkix_db:remove(Db),
     catch CacheCb:terminate(ClientSessionCache),
     ok.
 
@@ -415,10 +415,10 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 call(Msg) ->
-    gen_server:call(get(ssl_manager), {Msg, self()}, infinity).
+    gen_server:call(get(xssl_manager), {Msg, self()}, infinity).
 
 cast(Msg) ->
-    gen_server:cast(get(ssl_manager), Msg).
+    gen_server:cast(get(xssl_manager), Msg).
  
 validate_session(Host, Port, Session, LifeTime) ->
     case ssl_session:valid_session(Session, LifeTime) of
@@ -438,12 +438,12 @@ validate_session(Port, Session, LifeTime) ->
 		    
 start_session_validator(Cache, CacheCb, LifeTime, undefined) ->
     spawn_link(?MODULE, init_session_validator, 
-	       [[get(ssl_manager), Cache, CacheCb, LifeTime]]);
+	       [[get(xssl_manager), Cache, CacheCb, LifeTime]]);
 start_session_validator(_,_,_, Pid) ->
     Pid.
 
 init_session_validator([SslManagerName, Cache, CacheCb, LifeTime]) ->
-    put(ssl_manager, SslManagerName),
+    put(xssl_manager, SslManagerName),
     CacheCb:foldl(fun session_validation/2,
 		  LifeTime, Cache).
 
@@ -466,11 +466,11 @@ invalidate_session(Cache, CacheCb, Key, _Session,
     end.
 
 clean_cert_db(Ref, CertDb, RefDb, FileMapDb, File) ->
-    case ssl_pkix_db:ref_count(Ref, RefDb, 0) of
+    case xssl_pkix_db:ref_count(Ref, RefDb, 0) of
 	0 ->
-	    ssl_pkix_db:remove(Ref, RefDb),
-	    ssl_pkix_db:remove(File, FileMapDb),
-	    ssl_pkix_db:remove_trusted_certs(Ref, CertDb);
+	    xssl_pkix_db:remove(Ref, RefDb),
+	    xssl_pkix_db:remove(File, FileMapDb),
+	    xssl_pkix_db:remove_trusted_certs(Ref, CertDb);
 	_ ->
 	    ok
     end.
@@ -573,7 +573,7 @@ exists_equivalent(Session, [ _ | Rest]) ->
 
 add_trusted_certs(Pid, Trustedcerts, Db) ->
     try
-	ssl_pkix_db:add_trusted_certs(Pid, Trustedcerts, Db) 	    
+	xssl_pkix_db:add_trusted_certs(Pid, Trustedcerts, Db) 	    
     catch
 	_:Reason ->
 	    {error, Reason}

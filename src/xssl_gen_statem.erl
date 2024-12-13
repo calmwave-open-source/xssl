@@ -282,9 +282,6 @@ ssl_config(Opts, Role, #state{static_env = InitStatEnv0,
 %% Description: Connect to an ssl server.
 %%--------------------------------------------------------------------
 connect(Connection, Host, Port, Socket, Options, User, CbInfo, Timeout) ->
-    erlang:display("XXXXCalling start_fsm"),
-    io:format("~20p~n", [Connection]),
-
     try Connection:start_fsm(client, Host, Port, Socket, Options, User, CbInfo,
 			     Timeout)
     catch
@@ -1170,7 +1167,7 @@ handle_trusted_certs_db(#state{static_env = #static_env{cert_db_ref = Ref,
   when CertDb =/= undefined, not is_map_key(cacertfile, Opts) ->
     %% Certs provided as DER directly can not be shared
     %% with other connections and it is safe to delete them when the connection ends.
-    ssl_pkix_db:remove_trusted_certs(Ref, CertDb);
+    xssl_pkix_db:remove_trusted_certs(Ref, CertDb);
 handle_trusted_certs_db(#state{static_env = #static_env{file_ref_db = undefined}}) ->
     %% Something went wrong early (typically cacertfile does not
     %% exist) so there is nothing to handle
@@ -1178,9 +1175,9 @@ handle_trusted_certs_db(#state{static_env = #static_env{file_ref_db = undefined}
 handle_trusted_certs_db(#state{static_env = #static_env{cert_db_ref = Ref,
                                                         file_ref_db = RefDb},
 			       ssl_options = #{cacertfile := File}}) ->
-    case ssl_pkix_db:ref_count(Ref, RefDb, -1) of
+    case xssl_pkix_db:ref_count(Ref, RefDb, -1) of
 	0 ->
-	    ssl_manager:clean_cert_db(Ref, File);
+	    xssl_manager:clean_cert_db(Ref, File);
 	_ ->
 	    ok
     end.
@@ -1217,7 +1214,7 @@ terminate({shutdown, own_alert}, _StateName, #state{
                                                                          socket = Socket,
                                                                          transport_cb = Transport}} = State) ->
     handle_trusted_certs_db(State),
-    case application:get_env(ssl, alert_timeout) of
+    case application:get_env(xssl, alert_timeout) of
 	{ok, Timeout} when is_integer(Timeout) ->
 	    Connection:close({close, Timeout}, Socket, Transport, undefined);
 	_ ->
@@ -1309,7 +1306,7 @@ handle_sni_hostname(Hostname,
                    crl_db_info := CRLDbHandle,
                    cert_key_alts := CertKeyAlts,
                    dh_params := DHParams}} =
-                ssl_config:init(NewOptions, server),
+                xssl_config:init(NewOptions, server),
             State0#state{
               static_env = InitStatEnv0#static_env{
                              file_ref_db = FileRefHandle,
@@ -1846,7 +1843,7 @@ terminate_alert(_) ->
     ?ALERT_REC(?FATAL, ?INTERNAL_ERROR).
 
 invalidate_session(client, Host, Port, Session) ->
-    ssl_manager:invalidate_session(Host, Port, Session);
+    xssl_manager:invalidate_session(Host, Port, Session);
 invalidate_session(server, _, _, _) ->
     ok.
 

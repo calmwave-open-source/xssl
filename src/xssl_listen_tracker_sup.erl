@@ -58,10 +58,10 @@ init(_) ->
                  period    => 3600
                 },
     ChildSpecs = [#{id       => undefined,
-                    start    => {tls_socket, start_link, []},
+                    start    => {xtls_socket, start_link, []},
                     restart  => temporary, 
                     shutdown => 4000,
-                    modules  => [tls_socket],
+                    modules  => [xtls_socket],
                     type     => worker
                    }],    
     {ok, {SupFlags, ChildSpecs}}.

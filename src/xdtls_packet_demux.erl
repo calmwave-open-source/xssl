@@ -427,7 +427,7 @@ session_id_tracker(Listener,_) ->
     xdtls_server_session_cache_sup:start_child(Listener).
 
 get_internal_active_n() ->
-    case application:get_env(ssl, internal_active_n) of
+    case application:get_env(xssl, internal_active_n) of
         {ok, N} when is_integer(N) ->
             N;
         _  ->

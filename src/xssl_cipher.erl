@@ -94,7 +94,7 @@ security_parameters(?TLS_NULL_WITH_NULL_NULL = CipherSuite, SecParams) ->
     security_parameters(undefined, CipherSuite, SecParams).
 
 %%--------------------------------------------------------------------
--spec security_parameters(ssl_record:ssl_version() | undefined, 
+-spec security_parameters(xssl_record:ssl_version() | undefined, 
                           xssl_cipher_format:cipher_suite(), #security_parameters{}) ->
 				 #security_parameters{}.
 %%
@@ -314,7 +314,7 @@ block_decipher(Fun, #cipher_state{key=Key, iv=IV} = CipherState0,
     end.
 
 %%--------------------------------------------------------------------
--spec suites(ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
+-spec suites(xssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 %%
 %% Description: Returns a list of supported cipher suites.
 %%--------------------------------------------------------------------
@@ -344,7 +344,7 @@ tls_legacy_suites(Version) ->
     lists:flatmap(fun (Fun) -> Fun(Version) end, LegacySuites).
 
 %%--------------------------------------------------------------------
--spec anonymous_suites(ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
+-spec anonymous_suites(xssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 %%
 %% Description: Returns a list of the anonymous cipher suites, only supported
 %% if explicitly set by user. Intended only for testing.
@@ -375,7 +375,7 @@ filter(DerCert, Ciphers0, Version) ->
     SigAlg = OtpCert#'OTPCertificate'.signatureAlgorithm,
     PubKeyInfo = OtpCert#'OTPCertificate'.tbsCertificate#'OTPTBSCertificate'.subjectPublicKeyInfo,
     PubKeyAlg = PubKeyInfo#'OTPSubjectPublicKeyInfo'.algorithm,
-    Type =  case ssl_certificate:public_key_type(PubKeyAlg#'PublicKeyAlgorithm'.algorithm) of
+    Type =  case xssl_certificate:public_key_type(PubKeyAlg#'PublicKeyAlgorithm'.algorithm) of
                 rsa_pss_pss ->
                     rsa;
                 Other ->
@@ -383,7 +383,7 @@ filter(DerCert, Ciphers0, Version) ->
             end,
     Ciphers = filter_suites_pubkey(Type, Ciphers0, Version, OtpCert),
     SigAlgo = SigAlg#'SignatureAlgorithm'.algorithm,
-    Sign = ssl_certificate:public_key_type(SigAlgo),
+    Sign = xssl_certificate:public_key_type(SigAlgo),
     filter_suites_signature(Sign, Ciphers, Version).
 
 %%--------------------------------------------------------------------
@@ -1168,8 +1168,8 @@ filter_kex(Ciphers, Fn) ->
 key_uses(OtpCert) ->
     TBSCert = OtpCert#'OTPCertificate'.tbsCertificate, 
     TBSExtensions = TBSCert#'OTPTBSCertificate'.extensions,
-    Extensions = ssl_certificate:extensions_list(TBSExtensions),
-    case ssl_certificate:select_extension(?'id-ce-keyUsage', Extensions) of
+    Extensions = xssl_certificate:extensions_list(TBSExtensions),
+    case xssl_certificate:select_extension(?'id-ce-keyUsage', Extensions) of
 	undefined ->
 	    [];
 	#'Extension'{extnValue = KeyUses} ->
@@ -1180,7 +1180,7 @@ key_uses(OtpCert) ->
 filter_keyuse_suites(_, [], CiphersSuites, _) ->
     CiphersSuites;
 filter_keyuse_suites(Use, KeyUse, CipherSuits, Suites) ->
-    case ssl_certificate:is_valid_key_usage(KeyUse, Use) of
+    case xssl_certificate:is_valid_key_usage(KeyUse, Use) of
 	true ->
 	    CipherSuits;
 	false ->

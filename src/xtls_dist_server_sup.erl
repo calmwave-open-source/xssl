@@ -62,28 +62,28 @@ init([]) ->
 %% Handles emulated options so that they inherited by the accept
 %% socket, even when setopts is performed on the listen socket
 xlisten_options_tracker_child_spec() ->
-    #{id       => dist_ssl_listen_tracker_sup,
-      start    => {ssl_listen_tracker_sup, start_link_dist, []},
+    #{id       => xdist_ssl_listen_tracker_sup,
+      start    => {xssl_listen_tracker_sup, start_link_dist, []},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [ssl_listen_tracker_sup],
+      modules  => [xssl_listen_tracker_sup],
       type     => supervisor
      }.
 
 xtls_server_session_child_spec() ->
-    #{id       => dist_tls_server_session_ticket,
-      start    => {tls_server_session_ticket_sup, start_link_dist, []},
+    #{id       => xdist_tls_server_session_ticket,
+      start    => {xtls_server_session_ticket_sup, start_link_dist, []},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [tls_server_session_ticket_sup],
+      modules  => [xtls_server_session_ticket_sup],
       type     => supervisor
      }.
 
 xssl_server_session_child_spec() ->
-    #{id       => dist_ssl_upgrade_server_session_cache_sup,
-      start    => {ssl_upgrade_server_session_cache_sup, start_link_dist, []},
+    #{id       => xdist_ssl_upgrade_server_session_cache_sup,
+      start    => {xssl_upgrade_server_session_cache_sup, start_link_dist, []},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [ssl_upgrade_server_session_cache_sup],
+      modules  => [xssl_upgrade_server_session_cache_sup],
       type     => supervisor
      }.

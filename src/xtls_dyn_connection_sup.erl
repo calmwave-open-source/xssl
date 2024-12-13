@@ -65,8 +65,8 @@ sender(Args) ->
     #{id          => sender,
       restart     => temporary,
       type        => worker,
-      start       => {tls_sender, start_link, Args},
-      modules     => [tls_sender]
+      start       => {xtls_sender, start_link, Args},
+      modules     => [xtls_sender]
      }.
 
 receiver(Args) ->

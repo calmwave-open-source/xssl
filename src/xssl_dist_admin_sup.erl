@@ -57,19 +57,19 @@ init([]) ->
 %%--------------------------------------------------------------------
 
 pem_cache_child_spec() ->
-    #{id        => ssl_pem_cache_dist,
-      start     => {ssl_pem_cache, start_link_dist, [[]]},
+    #{id        => xssl_pem_cache_dist,
+      start     => {xssl_pem_cache, start_link_dist, [[]]},
       restart   => permanent, 
       shutdown  => 4000,
-      modules   => [ssl_pem_cache],
+      modules   => [xssl_pem_cache],
       type      => worker
      }.
 session_and_cert_manager_child_spec() ->
     Opts = ssl_admin_sup:manager_opts(),
     #{id       => ssl_dist_manager,
-      start    => {ssl_manager, start_link_dist, [Opts]},
+      start    => {xssl_manager, start_link_dist, [Opts]},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [ssl_manager],
+      modules  => [xssl_manager],
       type     => worker
      }.

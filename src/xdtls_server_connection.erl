@@ -201,7 +201,7 @@ initial_hello({call, From}, {start, {Opts, EmOpts}, Timeout},
 	initial_hello({call, From}, {start, Timeout},
 	     State#state{ssl_options = SslOpts,
                          socket_options =
-                             ssl_config:new_emulated(EmOpts, SockOpts)})
+                             xssl_config:new_emulated(EmOpts, SockOpts)})
     catch throw:Error ->
             {stop_and_reply, {shutdown, normal}, {reply, From, {error, Error}}, State0}
     end;

@@ -54,10 +54,10 @@ init(_) ->
                  period    => 3600
                 },
     ChildSpecs = [#{id       => undefined,
-                    start    => {ssl_server_session_cache, start_link, []},
+                    start    => {xssl_server_session_cache, start_link, []},
                     restart  => temporary, 
                     shutdown => 4000,
-                    modules  => [ssl_server_session_cache],
+                    modules  => [xssl_server_session_cache],
                     type     => worker
                    }], 
     {ok, {SupFlags, ChildSpecs}}.

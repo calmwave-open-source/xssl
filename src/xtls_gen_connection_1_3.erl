@@ -395,7 +395,7 @@ init_max_early_data_size(client) ->
     %% Setting it to 0 means that a decryption error will result in an Alert.
     0;
 init_max_early_data_size(server) ->
-    ssl_config:get_max_early_data_size().
+    xssl_config:get_max_early_data_size().
 
 internal_active_n(#{ktls := true}, Socket) ->
     inet:setopts(Socket, [{packet, ssl_tls}]),
@@ -410,7 +410,7 @@ internal_active_n(#{erl_dist := true}, _) ->
     %%  spike.
     erlang:system_time() rem ?INTERNAL_ACTIVE_N + 1;
 internal_active_n(_,_) ->
-    case application:get_env(ssl, internal_active_n) of
+    case application:get_env(xssl, internal_active_n) of
         {ok, N} when is_integer(N) ->
             N;
         _  ->
