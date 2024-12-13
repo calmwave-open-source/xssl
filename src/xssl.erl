@@ -2240,7 +2240,7 @@ connect(Host, Port, Options, Timeout)
 	{ok, Config} = handle_options(Options, client, Host),
 	case Config#xconfig.connection_cb of
 	    xtls_gen_connection ->
-		tls_socket:connect(Host,Port,Config,Timeout);
+		xtls_socket:connect(Host,Port,Config,Timeout);
 	    xdtls_gen_connection ->
 		xdtls_socket:connect(Host,Port,Config,Timeout)
 	end

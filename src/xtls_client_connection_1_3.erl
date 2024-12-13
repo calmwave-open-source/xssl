@@ -418,7 +418,7 @@ wait_cv(internal,
     {Ref,Maybe} = xtls_gen_connection_1_3:do_maybe(),
     try
         {State, NextState}
-            = Maybe(tls_handshake_1_3:verify_certificate_verify(State0,
+            = Maybe(xtls_handshake_1_3:verify_certificate_verify(State0,
                                                                 CertificateVerify)),
         xtls_gen_connection:next_event(NextState, no_record, State)
     catch
@@ -445,7 +445,7 @@ wait_finished(internal,
               = State0) ->
     {Ref,Maybe} = xtls_gen_connection_1_3:do_maybe(),
     try
-        Maybe(tls_handshake_1_3:validate_finished(State0, VerifyData)),
+        Maybe(xtls_handshake_1_3:validate_finished(State0, VerifyData)),
         %% D.4.  Middlebox Compatibility Mode
         State1 = xtls_gen_connection_1_3:maybe_queue_change_cipher_spec(State0,
                                                                        first),
@@ -639,7 +639,7 @@ do_handle_exlusive_1_3_hello_or_hello_retry_request(
     {Ref,Maybe} = xtls_gen_connection_1_3:do_maybe(),
                                               try
         ClientGroups =
-            Maybe(tls_handshake_1_3:get_supported_groups(ClientGroups0)),
+            Maybe(xtls_handshake_1_3:get_supported_groups(ClientGroups0)),
         Cookie = maps:get(cookie, Extensions, undefined),
 
         KeyShare = maps:get(key_share, Extensions, undefined),
@@ -747,12 +747,12 @@ handle_server_hello(#server_hello{cipher_suite = SelectedCipherSuite,
     {Ref,Maybe} = xtls_gen_connection_1_3:do_maybe(),
     try
         ClientGroups =
-            Maybe(tls_handshake_1_3:get_supported_groups(ClientGroups0)),
+            Maybe(xtls_handshake_1_3:get_supported_groups(ClientGroups0)),
         ServerKeyShare = server_share(maps:get(key_share, Extensions)),
         ServerPreSharedKey = maps:get(pre_shared_key, Extensions, undefined),
 
         %% Go to state 'start' if server replies with 'HelloRetryRequest'.
-        Maybe(tls_handshake_1_3:maybe_hello_retry_request(ServerHello, State0)),
+        Maybe(xtls_handshake_1_3:maybe_hello_retry_request(ServerHello, State0)),
 
         %% Resumption and PSK
         State1 = xtls_gen_connection_1_3:handle_resumption(State0,
@@ -782,7 +782,7 @@ handle_server_hello(#server_hello{cipher_suite = SelectedCipherSuite,
         xssl_record:pending_connection_state(ConnectionStates, read),
         #security_parameters{prf_algorithm = HKDFAlgo} = SecParamsR,
 
-        PSK = Maybe(tls_handshake_1_3:get_pre_shared_key(SessionTickets,
+        PSK = Maybe(xtls_handshake_1_3:get_pre_shared_key(SessionTickets,
                                                          UseTicket,
                                                          HKDFAlgo,
                                                          ServerPreSharedKey)),
@@ -831,7 +831,7 @@ handle_encrypted_extensions(Extensions, State0) ->
 handle_certificate(#certificate_1_3{} = Certificate, State0) ->
     {Ref,Maybe} = xtls_gen_connection_1_3:do_maybe(),
     try
-        Maybe(tls_handshake_1_3:process_certificate(Certificate, State0))
+        Maybe(xtls_handshake_1_3:process_certificate(Certificate, State0))
     catch
         {Ref, #alert{} = Alert} ->
             {Alert, State0};
@@ -842,7 +842,7 @@ handle_certificate_request(#certificate_request_1_3{} =
                                CertificateRequest, State0) ->
     {Ref,Maybe} = xtls_gen_connection_1_3:do_maybe(),
     try
-        Maybe(tls_handshake_1_3:process_certificate_request(
+        Maybe(xtls_handshake_1_3:process_certificate_request(
                 CertificateRequest, State0))
     catch
         {Ref, #alert{} = Alert} ->
@@ -946,7 +946,7 @@ maybe_queue_cert_cert_cv(#state{connection_states = _ConnectionStates0,
     {Ref,Maybe} = xtls_gen_connection_1_3:do_maybe(),
     try
         %% Create Certificate
-        Certificate = Maybe(tls_handshake_1_3:certificate(OwnCerts,
+        Certificate = Maybe(xtls_handshake_1_3:certificate(OwnCerts,
                                                           CertDbHandle,
                                                           CertDbRef, <<>>,
                                                           client)),
@@ -974,7 +974,7 @@ maybe_queue_cert_verify(_Certificate,
     {Ref,Maybe} = xtls_gen_connection_1_3:do_maybe(),
     try
         CertificateVerify =
-            Maybe(tls_handshake_1_3:certificate_verify(CertPrivateKey,
+            Maybe(xtls_handshake_1_3:certificate_verify(CertPrivateKey,
                                                        SignatureScheme,
                                                        State, client)),
         {ok, Connection:queue_handshake(CertificateVerify, State)}
