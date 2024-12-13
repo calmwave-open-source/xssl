@@ -267,9 +267,6 @@ gen_info(Event, StateName, State) ->
         handle_info(Event, StateName, State)
     catch
         _:Reason:ST  ->
-            erlang:display("ERROR BAD"),
-            io:format("~20p~n", [Reason]),
-            io:format("~20p~n", [ST]),
             ?SSL_LOG(info, handshake_error, [{error, Reason}, {stacktrace, ST}]),
 	    xssl_gen_statem:handle_own_alert(?ALERT_REC(?FATAL, ?HANDSHAKE_FAILURE,
 						       malformed_handshake_data),
