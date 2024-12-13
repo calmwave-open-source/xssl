@@ -270,7 +270,7 @@ ssl_config(Opts, Role, #state{static_env = InitStatEnv0,
                  ssl_options = Opts}.
 
 %%--------------------------------------------------------------------
--spec connect(tls_gen_connection | xdtls_gen_connection,
+-spec connect(xtls_gen_connection | xdtls_gen_connection,
 	      xssl:host(), inet:port_number(),
 	      port() | {tuple(), port()}, %% TLS | DTLS
 	      {ssl_options(), #xsocket_options{},
@@ -289,7 +289,7 @@ connect(Connection, Host, Port, Socket, Options, User, CbInfo, Timeout) ->
 	    {error, ssl_not_started}
     end.
 %%--------------------------------------------------------------------
--spec handshake(tls_gen_connection | xdtls_gen_connection,
+-spec handshake(xtls_gen_connection | xdtls_gen_connection,
 		 inet:port_number(), port(),
 		 {ssl_options(), #xsocket_options{}, list()},
 		 pid(), tuple(), timeout()) ->
@@ -742,7 +742,7 @@ downgrade(info, Info, State) ->
     xtls_gen_connection:handle_info(Info, ?STATE(downgrade), State);
 downgrade(Type, Event, State) ->
     try
-        xtls_dtls_gen_connection:downgrade(Type, Event, State)
+        xtls_xdtls_gen_connection:downgrade(Type, Event, State)
     catch throw:#alert{} = Alert ->
             handle_own_alert(Alert, ?STATE(downgrade), State)
     end.
@@ -2036,7 +2036,7 @@ set_socket_opts(ConnectionCb, Transport, Socket, Tab, [{mode, Mode}| Opts], Sock
 		    SockOpts#xsocket_options{mode = Mode}, Other);
 set_socket_opts(_, _, _, _Tab, [{mode, _} = Opt| _], SockOpts, _) ->
     {{error, {options, {socket_options, Opt}}}, SockOpts};
-set_socket_opts(tls_gen_connection, Transport, Socket, Tab, [{packet, Packet}| Opts], SockOpts, Other)
+set_socket_opts(xtls_gen_connection, Transport, Socket, Tab, [{packet, Packet}| Opts], SockOpts, Other)
   when Packet == raw;
        Packet == 0;
        Packet == 1;
@@ -2053,19 +2053,19 @@ set_socket_opts(tls_gen_connection, Transport, Socket, Tab, [{packet, Packet}| O
        Packet == http_bin;
        Packet == httph_bin ->
     true = ets:insert(Tab, {{socket_options, packet}, Packet}),
-    set_socket_opts(tls_gen_connection, Transport, Socket, Tab, Opts,
+    set_socket_opts(xtls_gen_connection, Transport, Socket, Tab, Opts,
 		    SockOpts#xsocket_options{packet = Packet}, Other);
 set_socket_opts(_, _, _, _Tab, [{packet, _} = Opt| _], SockOpts, _) ->
     {{error, {options, {socket_options, Opt}}}, SockOpts};
-set_socket_opts(tls_gen_connection, Transport, Socket, Tab, [{header, Header}| Opts], SockOpts, Other)
+set_socket_opts(xtls_gen_connection, Transport, Socket, Tab, [{header, Header}| Opts], SockOpts, Other)
   when is_integer(Header) ->
-    set_socket_opts(tls_gen_connection, Transport, Socket, Tab, Opts,
+    set_socket_opts(xtls_gen_connection, Transport, Socket, Tab, Opts,
 		    SockOpts#xsocket_options{header = Header}, Other);
 set_socket_opts(_, _, _, _Tab, [{header, _} = Opt| _], SockOpts, _) ->
     {{error,{options, {socket_options, Opt}}}, SockOpts};
-set_socket_opts(tls_gen_connection, Transport,Socket, Tab, [{packet_size, Size}| Opts], SockOpts, Other)
+set_socket_opts(xtls_gen_connection, Transport,Socket, Tab, [{packet_size, Size}| Opts], SockOpts, Other)
   when is_integer(Size) ->
-    set_socket_opts(tls_gen_connection, Transport, Socket, Tab, Opts,
+    set_socket_opts(xtls_gen_connection, Transport, Socket, Tab, Opts,
                     SockOpts#xsocket_options{packet_size = Size}, Other);
 set_socket_opts(_,_, _, _Tab, [{packet_size, _} = Opt| _], SockOpts, _) ->
     {{error, {options, {socket_options, Opt}} }, SockOpts};

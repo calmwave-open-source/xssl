@@ -502,7 +502,7 @@ send_application_data(Data, From, StateName,
             {keep_state_and_data, [{next_event, internal, {post_handshake_data, From, KeyUpdate}},
                                    {next_event, internal, {application_packets, From, Data}}]};
 	renegotiate ->
-	    xtls_dtls_gen_connection:internal_renegotiation(Pid, ConnectionStates0),
+	    xtls_xdtls_gen_connection:internal_renegotiation(Pid, ConnectionStates0),
             {next_state, handshake, StateData0, 
              [{next_event, internal, {application_packets, From, Data}}]};
         chunk_and_key_update ->

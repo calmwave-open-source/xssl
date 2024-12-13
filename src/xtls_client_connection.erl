@@ -138,7 +138,7 @@
 %%====================================================================
 
 init([Role, Sender, Tab, Host, Port, Socket, Options,  User, CbInfo]) ->
-    State0 = xtls_dtls_gen_connection:initial_state(Role, Sender, Tab, Host, Port,
+    State0 = xtls_xdtls_gen_connection:initial_state(Role, Sender, Tab, Host, Port,
                                                    Socket, Options, User, CbInfo),
     #state{static_env = #static_env{user_socket = UserSocket}} = State0,
     User ! {self(), user_socket, UserSocket},
@@ -308,7 +308,7 @@ hello(internal, #server_hello{} = Hello,
         case xtls_handshake:hello(Hello, SslOptions, ConnectionStates0, Renegotiation, OldId) of
             %% Legacy TLS 1.2 and older
             {Version, NewId, ConnectionStates, ProtoExt, Protocol, StaplingState} ->
-                xtls_dtls_client_connection:handle_session(
+                xtls_xdtls_client_connection:handle_session(
                   Hello, Version, NewId, ConnectionStates, ProtoExt, Protocol,
                   State#state{
                     handshake_env =
@@ -475,7 +475,7 @@ code_change(_OldVsn, StateName, State, _) ->
 %% Internal functions
 %%====================================================================
 gen_state(StateName, Type, Event, State) ->
-    try xtls_dtls_client_connection:StateName(Type, Event, State)
+    try xtls_xdtls_client_connection:StateName(Type, Event, State)
     catch throw:#alert{} = Alert ->
             xssl_gen_statem:handle_own_alert(Alert, StateName, State);
           _:Reason:ST ->

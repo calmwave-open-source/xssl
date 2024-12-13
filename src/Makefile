@@ -49,7 +49,7 @@ MODULES= \
         xdtls_client_connection \
 	dtls_connection_sup \
 	dtls_handshake \
-	dtls_gen_connection \
+	dxtls_gen_connection \
 	dtls_listener_sup \
 	dtls_packet_demux \
 	dtls_record \
@@ -95,13 +95,13 @@ MODULES= \
 	tls_bloom_filter \
 	tls_dtls_client_connection \
 	tls_dtls_server_connection \
-	tls_dtls_gen_connection \
+	tls_dxtls_gen_connection \
 	tls_server_connection \
 	tls_client_connection \
 	tls_connection_sup \
 	tls_server_connection_1_3 \
 	tls_client_connection_1_3 \
-	tls_gen_connection_1_3 \
+	xtls_gen_connection_1_3 \
         xtls_gen_connection \
 	tls_handshake \
 	tls_handshake_1_3 \

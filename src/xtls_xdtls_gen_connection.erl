@@ -26,7 +26,7 @@
 %% NOTE: All alerts are thrown out of this module
 %%----------------------------------------------------------------------
 
--module(xtls_dtls_gen_connection).
+-module(xtls_xdtls_gen_connection).
 -moduledoc false.
 
 -include_lib("public_key/include/public_key.hrl").

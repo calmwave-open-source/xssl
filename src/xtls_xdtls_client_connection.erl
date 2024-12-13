@@ -26,7 +26,7 @@
 %% NOTE: All alerts are thrown out of this module
 %%----------------------------------------------------------------------
 
--module(xtls_dtls_client_connection).
+-module(xtls_xdtls_client_connection).
 -moduledoc false.
 
 -include_lib("public_key/include/public_key.hrl").
@@ -63,7 +63,7 @@
 hello(internal,  #hello_request{}, _) ->
     keep_state_and_data;
 hello(Type, Event, State) ->
-    xtls_dtls_gen_connection:hello(Type, Event, State).
+    xtls_xdtls_gen_connection:hello(Type, Event, State).
 
 %--------------------------------------------------------------------
 -spec user_hello(gen_statem:event_type(),
@@ -71,7 +71,7 @@ hello(Type, Event, State) ->
           gen_statem:state_function_result().
 %%--------------------------------------------------------------------
 user_hello(Type, Event, State) ->
-    xtls_dtls_gen_connection:user_hello(Type, Event, State).
+    xtls_xdtls_gen_connection:user_hello(Type, Event, State).
 
 %%--------------------------------------------------------------------
 -spec abbreviated(gen_statem:event_type(),
@@ -94,7 +94,7 @@ abbreviated(internal, #finished{verify_data = Data} = Finished,
 	    ConnectionStates1 =
 		xssl_record:set_server_verify_data(current_read, Data, ConnectionStates0),
 	    {#state{handshake_env = HsEnv} = State1, Actions} =
-		tls_dtls_gen_connection:finalize_handshake(
+		tls_dxtls_gen_connection:finalize_handshake(
                   State0#state{connection_states = ConnectionStates1},
                   ?STATE(abbreviated), Connection),
 	    {Record, State} =
@@ -107,7 +107,7 @@ abbreviated(internal, #finished{verify_data = Data} = Finished,
             throw(Alert)
     end;
 abbreviated(Type, Event, State) ->
-    xtls_dtls_gen_connection:abbreviated(Type, Event, State).
+    xtls_xdtls_gen_connection:abbreviated(Type, Event, State).
 
 %%--------------------------------------------------------------------
 -spec wait_stapling(gen_statem:event_type(),
@@ -220,11 +220,11 @@ certify(internal, #server_key_exchange{exchange_keys = Keys},
     Params = ssl_handshake:decode_server_key(Keys, KexAlg, xssl:tls_version(Version)),
 
     %% Use negotiated value if TLS-1.2 otherwise return default
-    HashSign = xtls_dtls_gen_connection:negotiated_hashsign(Params#server_key_params.hashsign,
+    HashSign = xtls_xdtls_gen_connection:negotiated_hashsign(Params#server_key_params.hashsign,
                                                            KexAlg, PubKeyInfo,
                                                            xssl:tls_version(Version)),
 
-    case xtls_dtls_gen_connection:is_anonymous(KexAlg) of
+    case xtls_xdtls_gen_connection:is_anonymous(KexAlg) of
 	true ->
 	    calculate_secret(Params#server_key_params.params,
 			     State#state{handshake_env =
@@ -303,7 +303,7 @@ certify(internal, #server_hello_done{},
 	#alert{} = Alert ->
             throw(Alert);
 	PremasterSecret ->
-	    State = xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret,
+	    State = xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret,
 				  State0#state{handshake_env =
                                                    HsEnv#handshake_env{premaster_secret = PremasterSecret}}),
             client_certify_and_key_exchange(State, Connection)
@@ -328,7 +328,7 @@ certify(internal, #server_hello_done{},
                                       HsEnv#handshake_env{premaster_secret
                                                           = RSAPremasterSecret}},
             State =
-                xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret,
+                xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret,
                                                                 State1),
 	    client_certify_and_key_exchange(State, Connection)
     end;
@@ -367,7 +367,7 @@ certify(internal, #server_hello_done{},
 certify(internal, #hello_request{}, _) ->
     keep_state_and_data;
 certify(Type, Event, State) ->
-    xtls_dtls_gen_connection:certify(Type, Event, State).
+    xtls_xdtls_gen_connection:certify(Type, Event, State).
 
 %%--------------------------------------------------------------------
 -spec cipher(gen_statem:event_type(),
@@ -408,7 +408,7 @@ cipher(internal, #finished{verify_data = Data} = Finished,
             throw(Alert)
     end;
 cipher(Type, Event, State) ->
-    xtls_dtls_gen_connection:cipher(Type, Event, State).
+    xtls_xdtls_gen_connection:cipher(Type, Event, State).
 
 %%--------------------------------------------------------------------
 -spec connection(gen_statem:event_type(), term(), #state{}) ->
@@ -437,7 +437,7 @@ connection(internal, {handshake, {#hello_request{} = Handshake, _}},
     {next_state, connection, State#state{handshake_env = HsEnv#handshake_env{renegotiation = {true, peer}}},
      [{next_event, internal, Handshake}]};
 connection(Type, Event, State) ->
-    xtls_dtls_gen_connection:connection(Type, Event, State).
+    xtls_xdtls_gen_connection:connection(Type, Event, State).
 
 %%--------------------------------------------------------------------
 -spec downgrade(gen_statem:event_type(), term(), #state{}) ->
@@ -463,7 +463,7 @@ handle_session(#server_hello{cipher_suite = CipherSuite},
     #{key_exchange := KeyAlgorithm} =
 	xssl_cipher_format:suite_bin_to_map(CipherSuite),
 
-    PremasterSecret = xtls_dtls_gen_connection:make_premaster_secret(ReqVersion, KeyAlgorithm),
+    PremasterSecret = xtls_xdtls_gen_connection:make_premaster_secret(ReqVersion, KeyAlgorithm),
 
     {ExpectNPN, Protocol} =
         case Protocol0 of
@@ -577,7 +577,7 @@ calculate_secret(#server_dh_params{dh_p = Prime, dh_g = Base,
     Keys = {_, PrivateDhKey} = crypto:generate_key(dh, [Prime, Base]),
     PremasterSecret =
 	ssl_handshake:premaster_secret(ServerPublicDhKey, PrivateDhKey, Params),
-    xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret,
+    xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret,
 			    State#state{handshake_env = HsEnv#handshake_env{kex_keys = Keys}},
 			    Connection, certify, certify);
 calculate_secret(#server_ecdh_params{curve = ECCurve, public = ECServerPubKey},
@@ -586,7 +586,7 @@ calculate_secret(#server_ecdh_params{curve = ECCurve, public = ECServerPubKey},
     ECDHKeys = public_key:generate_key(ECCurve),
     PremasterSecret =
 	ssl_handshake:premaster_secret(#'ECPoint'{point = ECServerPubKey}, ECDHKeys),
-    xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret,
+    xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret,
 			    State#state{handshake_env = HsEnv#handshake_env{kex_keys = ECDHKeys},
 					session = Session#session{ecc = ECCurve}},
 			    Connection, certify, certify);
@@ -605,7 +605,7 @@ calculate_secret(#server_dhe_psk_params{
     Keys = {_, PrivateDhKey} =
 	crypto:generate_key(dh, [Prime, Base]),
     PremasterSecret = ssl_handshake:premaster_secret(ServerKey, PrivateDhKey, PSKLookup),
-    xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret,
+    xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret,
                                                     State#state{handshake_env =
                                                                     HsEnv#handshake_env{kex_keys = Keys}},
 			    Connection, certify, certify);
@@ -617,7 +617,7 @@ calculate_secret(#server_ecdhe_psk_params{
     ECDHKeys = public_key:generate_key(ECCurve),
 
     PremasterSecret = ssl_handshake:premaster_secret(ServerKey, ECDHKeys, PSKLookup),
-    xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret,
+    xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret,
                                                     State#state{handshake_env =
                                                                     HsEnv#handshake_env{kex_keys = ECDHKeys},
                                                                 session = Session#session{ecc = ECCurve}},
@@ -628,14 +628,14 @@ calculate_secret(#server_srp_params{srp_n = Prime, srp_g = Generator} = ServerKe
 		 Connection) ->
     Keys = generate_srp_client_keys(Generator, Prime, 0),
     PremasterSecret = ssl_handshake:premaster_secret(ServerKey, Keys, SRPId),
-    xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret,
+    xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret,
                                                     State#state{handshake_env =
                                                                     HsEnv#handshake_env{kex_keys = Keys}},
                                                     Connection, certify, certify).
 
 client_certify_and_key_exchange(State0, Connection) ->
     State1 = do_client_certify_and_key_exchange(State0, Connection),
-    {State2, Actions} = xtls_dtls_gen_connection:finalize_handshake(State1, certify, Connection),
+    {State2, Actions} = xtls_xdtls_gen_connection:finalize_handshake(State1, certify, Connection),
     #state{handshake_env = HsEnv0} = State2,
     HsEnv = HsEnv0#handshake_env{client_certificate_status = not_requested},
     State = State2#state{handshake_env = HsEnv},     %% Reinitialize

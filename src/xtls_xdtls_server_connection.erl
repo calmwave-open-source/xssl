@@ -26,7 +26,7 @@
 %% NOTE: All alerts are thrown out of this module
 %%----------------------------------------------------------------------
 
--module(xtls_dtls_server_connection).
+-module(xtls_xdtls_server_connection).
 -moduledoc false.
 
 -include_lib("public_key/include/public_key.hrl").
@@ -77,7 +77,7 @@ initial_hello(Type, Msg, State) ->
 hello(internal, {common_client_hello, Type, ServerHelloExt}, State) ->
     do_server_hello(Type, ServerHelloExt, State);
 hello(Type, Event, State) ->
-    xtls_dtls_gen_connection:hello(Type, Event, State).
+    xtls_xdtls_gen_connection:hello(Type, Event, State).
 
 %--------------------------------------------------------------------
 -spec user_hello(gen_statem:event_type(),
@@ -85,7 +85,7 @@ hello(Type, Event, State) ->
           gen_statem:state_function_result().
 %%--------------------------------------------------------------------
 user_hello(Type, Event, State) ->
-    xtls_dtls_gen_connection:user_hello(Type, Event, State).
+    xtls_xdtls_gen_connection:user_hello(Type, Event, State).
 
 %%--------------------------------------------------------------------
 -spec abbreviated(gen_statem:event_type(),
@@ -131,7 +131,7 @@ abbreviated(internal, #next_protocol{selected_protocol = SelectedProtocol},
     Connection:next_event(?STATE(abbreviated), no_record,
 			  State#state{handshake_env = NewHSEnv});
 abbreviated(Type, Event, State) ->
-    xtls_dtls_gen_connection:abbreviated(Type, Event, State).
+    xtls_xdtls_gen_connection:abbreviated(Type, Event, State).
 
 %%--------------------------------------------------------------------
 -spec certify(gen_statem:event_type(),
@@ -185,7 +185,7 @@ certify(internal, #certificate{asn1_certificates = DerCerts},
         {PeerCert, PublicKeyInfo} ->
             HsEnv = HsEnv0#handshake_env{client_certificate_status = needs_verifying},
             State = State0#state{handshake_env = HsEnv},
-            xtls_dtls_gen_connection:handle_peer_cert(Role, PeerCert, PublicKeyInfo, State,
+            xtls_xdtls_gen_connection:handle_peer_cert(Role, PeerCert, PublicKeyInfo, State,
                                                      Connection, []);
         #alert{} = Alert ->
             throw(Alert)
@@ -208,7 +208,7 @@ certify(internal, #client_key_exchange{exchange_keys = Keys},
             throw(Alert)
     end;
 certify(Type, Event, State) ->
-    xtls_dtls_gen_connection:certify(Type, Event, State).
+    xtls_xdtls_gen_connection:certify(Type, Event, State).
 
 %%--------------------------------------------------------------------
 -spec wait_cert_verify(gen_statem:event_type(),
@@ -229,7 +229,7 @@ wait_cert_verify(internal, #certificate_verify{signature = Signature,
 
     TLSVersion = xssl:tls_version(Version),
     %% Use negotiated value if TLS-1.2 otherwise return default
-    HashSign = xtls_dtls_gen_connection:negotiated_hashsign(CertHashSign, KexAlg,
+    HashSign = xtls_xdtls_gen_connection:negotiated_hashsign(CertHashSign, KexAlg,
                                                            PubKeyInfo, TLSVersion),
     case ssl_handshake:certificate_verify(Signature, PubKeyInfo,
 					  TLSVersion, HashSign, MasterSecret, Hist) of
@@ -287,7 +287,7 @@ cipher(internal, #finished{verify_data = Data} = Finished,
             ConnectionStates1 = xssl_record:set_client_verify_data(current_read, Data,
                                                                   ConnectionStates0),
             {State1, Actions} =
-                xtls_dtls_gen_connection:finalize_handshake(State0#state{connection_states =
+                xtls_xdtls_gen_connection:finalize_handshake(State0#state{connection_states =
                                                                             ConnectionStates1,
                                                                         session = Session},
                                                            cipher, Connection),
@@ -298,7 +298,7 @@ cipher(internal, #finished{verify_data = Data} = Finished,
             throw(Alert)
     end;
 cipher(Type, Event, State) ->
-    xtls_dtls_gen_connection:cipher(Type, Event, State).
+    xtls_xdtls_gen_connection:cipher(Type, Event, State).
 
 %%--------------------------------------------------------------------
 -spec connection(gen_statem:event_type(), term(), #state{}) ->
@@ -313,7 +313,7 @@ connection(cast, {internal_renegotiate, WriteState},
                          connection_states = ConnectionStates#{current_write => WriteState}},
     Connection:renegotiate(State, []);
 connection(Type, Event, State) ->
-    xtls_dtls_gen_connection:connection(Type, Event, State).
+    xtls_xdtls_gen_connection:connection(Type, Event, State).
 
 %%--------------------------------------------------------------------
 -spec downgrade(gen_statem:event_type(), term(), #state{}) ->
@@ -447,7 +447,7 @@ resumed_server_hello(#state{session = Session,
 	    State1 = State0#state{connection_states = ConnectionStates1,
 				  session = Session},
 	    {State, Actions} =
-		tls_dtls_gen_connection:finalize_handshake(State1, abbreviated, Connection),
+		tls_dxtls_gen_connection:finalize_handshake(State1, abbreviated, Connection),
 	    Connection:next_event(abbreviated, no_record, State, Actions);
 	#alert{} = Alert ->
             throw(Alert)
@@ -679,7 +679,7 @@ certify_client_key_exchange(#encrypted_premaster_secret{premaster_secret= EncPMS
                                                      }
                                   } = State, Connection) ->
     {Major, Minor} = Version,
-    FakeSecret = xtls_dtls_gen_connection:make_premaster_secret(Version, rsa),
+    FakeSecret = xtls_xdtls_gen_connection:make_premaster_secret(Version, rsa),
     %% Countermeasure for Bleichenbacher attack always provide some kind of premaster secret
     %% and fail handshake later.RFC 5246 section 7.4.7.1.
     PremasterSecret =
@@ -697,7 +697,7 @@ certify_client_key_exchange(#encrypted_premaster_secret{premaster_secret= EncPMS
             #alert{description = ?DECRYPT_ERROR} ->
                 FakeSecret
         end,
-    xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret, State, Connection,
+    xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State, Connection,
                                                     certify, client_kex_next_state(CCStatus));
 certify_client_key_exchange(#client_diffie_hellman_public{dh_public = ClientPublicDhKey},
 			    #state{handshake_env =
@@ -709,7 +709,7 @@ certify_client_key_exchange(#client_diffie_hellman_public{dh_public = ClientPubl
 			    Connection) ->
     PremasterSecret = ssl_handshake:premaster_secret(ClientPublicDhKey,
                                                      ServerDhPrivateKey, Params),
-    xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret, State,
+    xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State,
                                                     Connection, certify,
                                                     client_kex_next_state(CCStatus));
 
@@ -720,7 +720,7 @@ certify_client_key_exchange(#client_ec_diffie_hellman_public{dh_public = ClientP
                                   } = State, Connection) ->
     PremasterSecret =
         ssl_handshake:premaster_secret(#'ECPoint'{point = ClientPublicEcDhPoint}, ECDHKey),
-    xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret, State,
+    xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State,
                                                     Connection, certify,
                                                     client_kex_next_state(CCStatus));
 certify_client_key_exchange(#client_psk_identity{} = ClientKey,
@@ -731,7 +731,7 @@ certify_client_key_exchange(#client_psk_identity{} = ClientKey,
                                   } = State0,
 			    Connection) ->
     PremasterSecret = ssl_handshake:premaster_secret(ClientKey, PSKLookup),
-    xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret, State0,
+    xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State0,
                                                     Connection, certify,
                                                     client_kex_next_state(CCStatus));
 certify_client_key_exchange(#client_dhe_psk_identity{} = ClientKey,
@@ -747,7 +747,7 @@ certify_client_key_exchange(#client_dhe_psk_identity{} = ClientKey,
 			    Connection) ->
     PremasterSecret =
 	ssl_handshake:premaster_secret(ClientKey, ServerDhPrivateKey, Params, PSKLookup),
-    xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret, State0,
+    xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State0,
                                                     Connection, certify,
                                                     client_kex_next_state(CCStatus));
 certify_client_key_exchange(#client_ecdhe_psk_identity{} = ClientKey,
@@ -759,7 +759,7 @@ certify_client_key_exchange(#client_ecdhe_psk_identity{} = ClientKey,
 			    Connection) ->
     PremasterSecret =
 	ssl_handshake:premaster_secret(ClientKey, ServerEcDhPrivateKey, PSKLookup),
-    xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret, State,
+    xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State,
                                                     Connection, certify,
                                                     client_kex_next_state(CCStatus));
 certify_client_key_exchange(#client_rsa_psk_identity{} = ClientKey,
@@ -771,7 +771,7 @@ certify_client_key_exchange(#client_rsa_psk_identity{} = ClientKey,
                                   } = State0,
 			    Connection) ->
     PremasterSecret = ssl_handshake:premaster_secret(ClientKey, PrivateKey, PSKLookup),
-    xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret, State0,
+    xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State0,
                                                     Connection, certify,
                                                     client_kex_next_state(CCStatus));
 certify_client_key_exchange(#client_srp_public{} = ClientKey,
@@ -781,7 +781,7 @@ certify_client_key_exchange(#client_srp_public{} = ClientKey,
                                                       client_certificate_status = CCStatus}
 				  } = State0, Connection) ->
     PremasterSecret = ssl_handshake:premaster_secret(ClientKey, Key, Params),
-    xtls_dtls_gen_connection:calculate_master_secret(PremasterSecret, State0,
+    xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State0,
                                                     Connection, certify,
                                                     client_kex_next_state(CCStatus)).
 

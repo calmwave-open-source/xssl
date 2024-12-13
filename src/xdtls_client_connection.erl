@@ -304,7 +304,7 @@ hello(internal, #server_hello{} = Hello,
     try
         {Version, NewId, ConnectionStates, ProtoExt, Protocol, StaplingState} =
             xdtls_handshake:hello(Hello, SslOptions, ConnectionStates0, Renegotiation, OldId),
-        xtls_dtls_client_connection:handle_session(
+        xtls_xdtls_client_connection:handle_session(
           Hello, Version, NewId, ConnectionStates, ProtoExt, Protocol,
           State#state{handshake_env =
                           HsEnv#handshake_env{
@@ -387,7 +387,7 @@ certify(enter, _, State0) ->
     {State, Actions} = xdtls_gen_connection:handle_flight_timer(State0),
     {keep_state, State, Actions};
 certify(internal = Type, #server_hello_done{} = Event, State) ->
-   try xtls_dtls_client_connection:certify(Type, Event,  xdtls_gen_connection:prepare_flight(State))
+   try xtls_xdtls_client_connection:certify(Type, Event,  xdtls_gen_connection:prepare_flight(State))
     catch throw:#alert{} = Alert ->
             xssl_gen_statem:handle_own_alert(Alert, ?STATE(certify), State)
     end;
@@ -426,7 +426,7 @@ cipher(internal = Type, #change_cipher_spec{type = <<1>>} = Event,
     ConnectionStates1 = xdtls_record:save_current_connection_state(ConnectionStates0, read),
     ConnectionStates = xdtls_record:next_epoch(ConnectionStates1, read),
 
-     try xtls_dtls_server_connection:cipher(Type, Event,
+     try xtls_xdtls_server_connection:cipher(Type, Event,
                                            State#state{connection_states = ConnectionStates})
      catch throw:#alert{} = Alert ->
             xssl_gen_statem:handle_own_alert(Alert, cipher, State)
@@ -434,7 +434,7 @@ cipher(internal = Type, #change_cipher_spec{type = <<1>>} = Event,
 cipher(internal = Type, #finished{} = Event, #state{connection_states = ConnectionStates,
                                                     protocol_specific = PS} = State) ->
 
-    try xtls_dtls_client_connection:cipher(Type, Event,
+    try xtls_xdtls_client_connection:cipher(Type, Event,
                                           xdtls_gen_connection:prepare_flight(
                                             State#state{connection_states = ConnectionStates,
                                                         protocol_specific =
@@ -555,7 +555,7 @@ format_status(Type, Data) ->
     xssl_gen_statem:format_status(Type, Data).
 
 gen_state(StateName, Type, Event, State) ->
-    try xtls_dtls_client_connection:StateName(Type, Event, State)
+    try xtls_xdtls_client_connection:StateName(Type, Event, State)
     catch
         throw:#alert{}=Alert ->
             xdtls_gen_connection:alert_or_reset_connection(Alert, StateName, State);

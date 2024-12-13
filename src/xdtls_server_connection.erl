@@ -206,7 +206,7 @@ initial_hello({call, From}, {start, {Opts, EmOpts}, Timeout},
             {stop_and_reply, {shutdown, normal}, {reply, From, {error, Error}}, State0}
     end;
 initial_hello(Type, Event, State) ->
-    xtls_dtls_server_connection:initial_hello(Type, Event, State).
+    xtls_xdtls_server_connection:initial_hello(Type, Event, State).
 
 %%--------------------------------------------------------------------
 -spec config_error(gen_statem:event_type(),
@@ -232,7 +232,7 @@ hello(internal, #client_hello{cookie = <<>>,
                                       socket = Socket},
              connection_env = CEnv,
              protocol_specific = #{current_cookie_secret := Secret}} = State0) ->
-    try xtls_dtls_server_connection:handle_sni_extension(State0, Hello) of
+    try xtls_xdtls_server_connection:handle_sni_extension(State0, Hello) of
         #state{} = State1 ->
             {ok, {IP, Port}} = xdtls_socket:peername(Transport, Socket),
             Cookie = xdtls_handshake:cookie(Secret, IP, Port, Hello),
@@ -259,7 +259,7 @@ hello(internal, #client_hello{cookie = <<>>,
 hello(internal, #client_hello{extensions = Extensions} = Hello,
       #state{handshake_env = #handshake_env{continue_status = pause},
              recv = #recv{from = From}} = State0) ->
-    try xtls_dtls_server_connection:handle_sni_extension(State0, Hello) of
+    try xtls_xdtls_server_connection:handle_sni_extension(State0, Hello) of
         #state{recv = Recv} = State ->
             {next_state, user_hello, State#state{recv = Recv#recv{from = undefined}},
              [{postpone, true}, {reply, From, {ok, Extensions}}]}
@@ -539,7 +539,7 @@ handle_client_hello(#client_hello{client_version = ClientVersion} = Hello, State
                connection_env = #connection_env{cert_key_alts = CertKeyAlts} = CEnv,
                session = Session0,
                ssl_options = SslOpts} =
-            xtls_dtls_server_connection:handle_sni_extension(State0, Hello),
+            xtls_xdtls_server_connection:handle_sni_extension(State0, Hello),
         SessionTracker = proplists:get_value(session_id_tracker, Trackers),
         {Version, {Type, Session}, ConnectionStates, Protocol0, ServerHelloExt, HashSign} =
             xdtls_handshake:hello(Hello, SslOpts, {SessionTracker, Session0,
@@ -567,7 +567,7 @@ handle_client_hello(#client_hello{client_version = ClientVersion} = Hello, State
     end.
 
 gen_state(StateName, Type, Event, State) ->
-    try xtls_dtls_server_connection:StateName(Type, Event, State)
+    try xtls_xdtls_server_connection:StateName(Type, Event, State)
     catch
         throw:#alert{}=Alert ->
             xdtls_gen_connection:alert_or_reset_connection(Alert, StateName, State);

@@ -2313,9 +2313,9 @@ transport_accept(#xsslsocket{socket_handle = ListenSocket,
                             listener_config = #xconfig{connection_cb = ConnectionCb} = Config}, Timeout)
   when ?IS_TIMEOUT(Timeout) ->
     case ConnectionCb of
-	tls_gen_connection ->
+	xtls_gen_connection ->
 	    xtls_socket:accept(ListenSocket, Config, Timeout);
-	dtls_gen_connection ->
+	dxtls_gen_connection ->
 	    xdtls_socket:accept(ListenSocket, Config, Timeout)
     end.
 
@@ -3433,14 +3433,14 @@ renegotiate(#xsslsocket{connection_handler = Controller,
         _ ->
             case xtls_sender:renegotiate(Sender) of
                 {ok, Write} ->
-                    xtls_dtls_gen_connection:renegotiation(Controller, Write);
+                    xtls_xdtls_gen_connection:renegotiation(Controller, Write);
                 Error ->
                     Error
             end
     end;
 renegotiate(#xsslsocket{connection_handler = Controller,
                        connection_cb = xdtls_gen_connection}) when is_pid(Controller) ->
-    xtls_dtls_gen_connection:renegotiation(Controller);
+    xtls_xdtls_gen_connection:renegotiation(Controller);
 renegotiate(#xsslsocket{listener_config = #xconfig{}}) ->
     {error, enotconn}.
 

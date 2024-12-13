@@ -137,7 +137,7 @@
 %%====================================================================
 
 init([Role, Sender, Tab, Host, Port, Socket, Options,  User, CbInfo]) ->
-    State0 = xtls_dtls_gen_connection:initial_state(Role, Sender, Tab, Host, Port, Socket,
+    State0 = xtls_xdtls_gen_connection:initial_state(Role, Sender, Tab, Host, Port, Socket,
                                                    Options, User, CbInfo),
     #state{static_env = #static_env{user_socket = UserSocket}} = State0,
     User ! {self(), user_socket, UserSocket},
@@ -182,7 +182,7 @@ initial_hello({call, From}, {start, {Opts, EmOpts}, Timeout},
 	   {stop_and_reply, {shutdown, normal}, {reply, From, {error, Error}}, State0}
     end;
 initial_hello(Type, Event, State) ->
-    xtls_dtls_server_connection:initial_hello(Type, Event, State).
+    xtls_xdtls_server_connection:initial_hello(Type, Event, State).
 
 %%--------------------------------------------------------------------
 -spec config_error(gen_statem:event_type(),
@@ -207,7 +207,7 @@ hello(internal, #client_hello{client_version = ClientVersion} = Hello,
       #state{connection_env = CEnv} = State0) ->
     try
         #state{ssl_options = SslOpts} = State1 =
-            xtls_dtls_server_connection:handle_sni_extension(State0, Hello),
+            xtls_xdtls_server_connection:handle_sni_extension(State0, Hello),
         case choose_tls_fsm(SslOpts, Hello) of
             xtls_1_3_fsm ->
                 {next_state, start, State1,
@@ -273,7 +273,7 @@ wait_cert_verify(internal, #certificate_verify{signature = Signature,
 
     TLSVersion = xssl:tls_version(Version),
     %% Use negotiated value if TLS-1.2 otherwise return default
-    HashSign = xtls_dtls_gen_connection:negotiated_hashsign(CertHashSign, KexAlg,
+    HashSign = xtls_xdtls_gen_connection:negotiated_hashsign(CertHashSign, KexAlg,
                                                            PubKeyInfo, TLSVersion),
     case ssl_handshake:certificate_verify(Signature, PubKeyInfo,
 					  TLSVersion, HashSign, MasterSecret, Hist) of
@@ -441,7 +441,7 @@ choose_tls_fsm(_, _) ->
     xtls_1_0_to_1_2_fsm.
 
 gen_state(StateName, Type, Event, State) ->
-    try xtls_dtls_server_connection:StateName(Type, Event, State)
+    try xtls_xdtls_server_connection:StateName(Type, Event, State)
     catch throw:#alert{} = Alert ->
             xssl_gen_statem:handle_own_alert(Alert, StateName, State);
           _:Reason:ST ->

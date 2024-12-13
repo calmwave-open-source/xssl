@@ -431,7 +431,7 @@ trace_profiles() ->
         [{initial_hello, 3}]},
        {dtls_server_connection,
         [{initial_hello, 3}]},
-       {tls_gen_connection,
+       {xtls_gen_connection,
         [{start_connection_tree, 5}, {socket_control, 2}]}
       ]},
      {csp, %% OCSP
@@ -487,7 +487,7 @@ trace_profiles() ->
      {kdt, %% key update
       fun(M, F, A) -> dbg:tpl(M, F, A, x) end,
       fun(M, F, A) -> dbg:ctpl(M, F, A) end,
-      [{tls_gen_connection_1_3, [{handle_key_update, 2}]},
+      [{xtls_gen_connection_1_3, [{handle_key_update, 2}]},
        {tls_sender, [{init, 3}, {time_to_rekey, 6},
                      {send_post_handshake_data, 4}]},
        {tls_v1, [{update_traffic_secret, 2}]}]},
@@ -529,7 +529,7 @@ trace_profiles() ->
         [{connection, 3}]},
        {dtls_server_connection,
         [{connection, 3}]},
-       {dtls_gen_connection,
+       {dxtls_gen_connection,
         [{handle_info,3}]},
        {xssl_gen_statem,
         [{hibernate_after, 3}, {handle_common_event, 4}]}]},
