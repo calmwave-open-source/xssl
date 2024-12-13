@@ -236,7 +236,7 @@ next_event(StateName, no_record,
         {#ssl_tls{epoch = CurrentEpoch,
                   type = ?HANDSHAKE,
                   version = Version} = Record, State1} ->
-            State = xdtls_version(StateName, Version, State1), 
+            State = dtls_version(StateName, Version, State1), 
 	    {next_state, StateName, State,
 	     [{next_event, internal, {protocol_record, Record}} | Actions]};
         {#ssl_tls{epoch = CurrentEpoch} = Record, State} ->
@@ -266,7 +266,7 @@ next_event(connection = StateName, Record,
                  type = ?HANDSHAKE,
                  version = Version} = Record
           when Epoch =:= CurrentEpoch; Epoch =:= 0 ->
-            State = xdtls_version(StateName, Version, State0),
+            State = dtls_version(StateName, Version, State0),
 	    {next_state, StateName, State,
 	     [{next_event, internal, {protocol_record, Record}} | Actions]};
 	#ssl_tls{epoch = CurrentEpoch} ->
@@ -290,7 +290,7 @@ next_event(StateName, Record,
     case Record of
         #ssl_tls{epoch = CurrentEpoch,
                  version = Version} = Record ->
-            State = xdtls_version(StateName, Version, State0),
+            State = dtls_version(StateName, Version, State0),
             {next_state, StateName, State, 
              [{next_event, internal, {protocol_record, Record}} | Actions]};
 	#ssl_tls{epoch = _Epoch,
@@ -435,7 +435,7 @@ handle_protocol_record(#ssl_tls{type = ?HANDSHAKE, epoch = Epoch, fragment = Dat
 		next_event(StateName, no_record, State#state{protocol_buffers = Buffers});
 	    {Packets, Buffers} ->
 		HsEnv = State#state.handshake_env,
-		HSEvents = xdtls_handshake_events(Packets),
+		HSEvents = dtls_handshake_events(Packets),
                 Events = case is_new_connection(Epoch, Packets, State) of
                              true  -> [{next_event, internal, new_connection} | HSEvents];
                              false -> HSEvents
@@ -864,8 +864,8 @@ update_handshake_history(_, Handshake, Hist) ->
     ssl_handshake:update_handshake_history(Hist, iolist_to_binary(Handshake)).
 
 next_dtls_record(Data, StateName, #state{protocol_buffers = #protocol_buffers{
-						   xdtls_record_buffer = Buf0,
-						   xdtls_cipher_texts = CT0} = Buffers,
+						   dtls_record_buffer = Buf0,
+						   dtls_cipher_texts = CT0} = Buffers,
                                          connection_env = #connection_env{negotiated_version = Version},
                                          static_env = #static_env{data_tag = DataTag},
                                          ssl_options = SslOpts} = State0) ->
@@ -877,7 +877,7 @@ next_dtls_record(Data, StateName, #state{protocol_buffers = #protocol_buffers{
 	    CT1 = CT0 ++ Records,
 	    next_record(State0#state{protocol_buffers =
 					 Buffers#protocol_buffers{dtls_record_buffer = Buf1,
-								  xdtls_cipher_texts = CT1}});
+								  dtls_cipher_texts = CT1}});
 	#alert{} = Alert ->
 	    Alert
     end.

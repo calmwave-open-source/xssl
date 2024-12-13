@@ -24,8 +24,8 @@
 % see RFC 2246
 %%----------------------------------------------------------------------
 
--ifndef(xssl_record).
--define(xssl_record, true).
+-ifndef(ssl_record).
+-define(ssl_record, true).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Connection states - RFC 4346 section 6.1
@@ -191,4 +191,4 @@
 -define(SSL_3_0, {3,0}).
 -define(SSL_2_0, {2,0}).
 
--endif. % -ifdef(xssl_record).
+-endif. % -ifdef(ssl_record).

@@ -177,7 +177,7 @@ connection({call, From}, {export_key_materials, Labels, Contexts, WantedLengths,
            #state{connection_states = ConnectionStates,
                   protocol_specific = PS} = State0) ->
     #{security_parameters := #security_parameters{prf_algorithm = PRFAlgorithm}} =
-	xssl_record:current_connection_state(ConnectionStates, read),
+	ssl_record:current_connection_state(ConnectionStates, read),
     case maps:get(exporter_master_secret, PS, undefined) of
         undefined ->
             {next_state, ?STATE(connection), State0,
@@ -342,9 +342,9 @@ handle_new_session_ticket(#new_session_ticket{ticket_nonce = Nonce}
                                  connection_env = #connection_env{user_application = {_, User}}})
   when SessionTickets =:= manual ->
     #{security_parameters := SecParams} =
-	xssl_record:current_connection_state(ConnectionStates, read),
+	ssl_record:current_connection_state(ConnectionStates, read),
     CipherSuite = SecParams#security_parameters.cipher_suite,
-    #{cipher := Cipher} = ssl_cipher_format:suite_bin_to_map(CipherSuite),
+    #{cipher := Cipher} = xssl_cipher_format:suite_bin_to_map(CipherSuite),
     HKDF = SecParams#security_parameters.prf_algorithm,
     RMS = SecParams#security_parameters.resumption_master_secret,
     PSK = xtls_v1:pre_shared_key(RMS, Nonce, HKDF),
@@ -356,9 +356,9 @@ handle_new_session_ticket(#new_session_ticket{ticket_nonce = Nonce}
                                  ssl_options = #{session_tickets := SessionTickets} = SslOpts})
   when SessionTickets =:= auto ->
     #{security_parameters := SecParams} =
-	xssl_record:current_connection_state(ConnectionStates, read),
+	ssl_record:current_connection_state(ConnectionStates, read),
     CipherSuite = SecParams#security_parameters.cipher_suite,
-    #{cipher := Cipher} = ssl_cipher_format:suite_bin_to_map(CipherSuite),
+    #{cipher := Cipher} = xssl_cipher_format:suite_bin_to_map(CipherSuite),
     HKDF = SecParams#security_parameters.prf_algorithm,
     RMS = SecParams#security_parameters.resumption_master_secret,
     PSK = xtls_v1:pre_shared_key(RMS, Nonce, HKDF),

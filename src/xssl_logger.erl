@@ -269,9 +269,9 @@ parse_cipher_suites([_|_] = Ciphers) ->
     [format_cipher(C) || C <- Ciphers].
 
 format_cipher(C0) ->
-    try ssl_cipher_format:suite_bin_to_map(C0) of
+    try xssl_cipher_format:suite_bin_to_map(C0) of
         Map ->
-            ssl_cipher_format:suite_map_to_str(Map)
+            xssl_cipher_format:suite_map_to_str(Map)
     catch 
         error:function_clause ->
             format_uknown_cipher_suite(C0)
@@ -295,7 +295,7 @@ get_server_version(Version, Extensions) ->
             Version
     end.
 
--spec version(xssl_record:ssl_version()) -> string().
+-spec version(ssl_record:ssl_version()) -> string().
 version(?TLS_1_3) ->
     "TLS 1.3";
 version(?TLS_1_2) ->

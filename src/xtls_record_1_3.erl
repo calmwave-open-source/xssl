@@ -41,8 +41,8 @@
 %%====================================================================
 
 %%--------------------------------------------------------------------
--spec encode_handshake(iolist(), xssl_record:connection_states()) ->
-			      {iolist(), xssl_record:connection_states()}.
+-spec encode_handshake(iolist(), ssl_record:connection_states()) ->
+			      {iolist(), ssl_record:connection_states()}.
 %
 %% Description: Encodes a handshake message to send on the xtls-1.3-socket.
 %%--------------------------------------------------------------------
@@ -57,8 +57,8 @@ encode_handshake(Frag,ConnectionStates) ->
     end.
 
 %%--------------------------------------------------------------------
--spec encode_alert_record(#alert{}, xssl_record:connection_states()) ->
-				 {iolist(), xssl_record:connection_states()}.
+-spec encode_alert_record(#alert{}, ssl_record:connection_states()) ->
+				 {iolist(), ssl_record:connection_states()}.
 %%
 %% Description: Encodes an alert message to send on the ssl-socket.
 %%--------------------------------------------------------------------
@@ -67,8 +67,8 @@ encode_alert_record(#alert{level = Level, description = Description},
     encode_plain_text(?ALERT, <<?BYTE(Level), ?BYTE(Description)>>,
 		      ConnectionStates).
 %%--------------------------------------------------------------------
--spec encode_data(iolist(), xssl_record:connection_states()) ->
-			 {iolist(), xssl_record:connection_states()}.
+-spec encode_data(iolist(), ssl_record:connection_states()) ->
+			 {iolist(), ssl_record:connection_states()}.
 %%
 %% Description: Encodes data to send on the ssl-socket.
 %%--------------------------------------------------------------------
@@ -95,9 +95,9 @@ encode_iolist(_Type, [], CS, Encoded) ->
 %%====================================================================
 
 %%--------------------------------------------------------------------
--spec decode_cipher_text(#ssl_tls{}, xssl_record:connection_states()) ->
+-spec decode_cipher_text(#ssl_tls{}, ssl_record:connection_states()) ->
 				{#ssl_tls{} | no_record,
-                                 xssl_record:connection_states()}| #alert{}.
+                                 ssl_record:connection_states()}| #alert{}.
 %%
 %% Description: Decode cipher text, use legacy type ssl_tls instead of
 %% xtls_cipher_text in decoding context so that we can reuse the code

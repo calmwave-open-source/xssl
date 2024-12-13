@@ -30,7 +30,7 @@
 -include("xtls_record.hrl").
 
 -record(protocol_buffers, {
-          xtls_record_buffer = <<>>, %%    :: binary(),  % Buffer of incomplete records
+          tls_record_buffer = <<>>, %%    :: binary(),  % Buffer of incomplete records
           tls_handshake_buffer = <<>>, %% :: binary(),  % Buffer of incomplete handshakes
 	  tls_cipher_texts = []       %%:: [binary()]
 	 }).

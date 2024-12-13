@@ -448,7 +448,7 @@ handle_protocol_record(#ssl_tls{type = ?HANDSHAKE, fragment = Data}, StateName,
                 assert_buffer_sanity(NewHSBuffer, Options),
                 next_event(StateName, no_record, State);
             _ ->                
-                Events = xtls_handshake_events(HSPackets, RecordRest),
+                Events = tls_handshake_events(HSPackets, RecordRest),
                 case StateName of
                     connection ->
                         xssl_gen_statem:hibernate_after(StateName, State, Events);
@@ -594,7 +594,7 @@ tls_handshake_events(HSPackets, RecordRest) ->
     %% Coalesced TLS record data to be handled after first handshake message has been handled
     RestEvent = {next_event, internal, {protocol_record, #ssl_tls{type = ?HANDSHAKE,
                                                                   fragment = RecordRest}}},
-    FirstHS = xtls_handshake_events(HSPackets, <<>>),
+    FirstHS = tls_handshake_events(HSPackets, <<>>),
     FirstHS ++ [RestEvent].
 
 unprocessed_events(Events) ->

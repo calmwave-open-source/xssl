@@ -1860,7 +1860,7 @@ connection_info(#state{handshake_env = #handshake_env{sni_hostname = SNIHostname
 		       connection_env = #connection_env{negotiated_version =  {_,_} = Version},
 		       ssl_options = #{protocol := Protocol} = Opts}) ->
     RecordCB = record_cb(Protocol),
-    CipherSuiteDef = #{key_exchange := KexAlg} = ssl_cipher_format:suite_bin_to_map(CipherSuite),
+    CipherSuiteDef = #{key_exchange := KexAlg} = xssl_cipher_format:suite_bin_to_map(CipherSuite),
     IsNamedCurveSuite = lists:member(KexAlg,
                                      [ecdh_ecdsa, ecdhe_ecdsa, ecdh_rsa, ecdhe_rsa, ecdh_anon]),
     CurveInfo = case ECCCurve of
@@ -1887,7 +1887,7 @@ security_info(#state{connection_states = ConnectionStates,
                      static_env = #static_env{role = Role},
                      ssl_options = Opts,
                      protocol_specific = ProtocolSpecific}) ->
-    ReadState = xssl_record:current_connection_state(ConnectionStates, read),
+    ReadState = ssl_record:current_connection_state(ConnectionStates, read),
     #{security_parameters :=
 	  #security_parameters{client_random = ClientRand,
                                server_random = ServerRand,
@@ -1905,7 +1905,7 @@ security_info(#state{connection_states = ConnectionStates,
                   #security_parameters{
                      application_traffic_secret = AppTrafSecretWrite0,
                      client_early_data_secret = ClientEarlyData}} =
-                xssl_record:current_connection_state(ConnectionStates, write),
+                ssl_record:current_connection_state(ConnectionStates, write),
             Sender = maps:get(sender, ProtocolSpecific, undefined),
             AppTrafSecretWrite = {Sender, AppTrafSecretWrite0},
             if Role == server ->
@@ -2083,7 +2083,7 @@ ssl_options_list([{ciphers = Key, Value}|T], Acc) ->
     ssl_options_list(T,
                      [{Key, lists:map(
                               fun(Suite) ->
-                                      ssl_cipher_format:suite_bin_to_map(Suite)
+                                      xssl_cipher_format:suite_bin_to_map(Suite)
                               end, Value)}
 		     | Acc]);
 ssl_options_list([{Key, Value}|T], Acc) ->

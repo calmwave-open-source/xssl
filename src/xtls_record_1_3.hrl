@@ -24,8 +24,8 @@
 %% see RFC 8446 not present in earlier versions
 %%----------------------------------------------------------------------
 
--ifndef(tls_record_1_3).
--define(tls_record_1_3, true).
+-ifndef(xtls_record_1_3).
+-define(xtls_record_1_3, true).
 
 %% Common to TLS-1.3 and previous TLS versions 
 %% Some definitions may not exist in TLS-1.3 this is 
@@ -33,7 +33,7 @@
 -include("xtls_record.hrl"). 
 %% enum {
 %%         invalid(0),
-%%         %% defined in xssl_record.hrl
+%%         %% defined in ssl_record.hrl
 %%         change_cipher_spec(20),
 %%         alert(21),
 %%         handshake(22),
@@ -50,8 +50,8 @@
                             %% decrypted version will still use #ssl_tls for code reuse purposes
                             %% with real values for content type and version
                             opaque_type = ?OPAQUE_TYPE,
-                            legacy_version = ?LEGACY_VERSION :: xssl_record:ssl_version(),
+                            legacy_version = ?LEGACY_VERSION :: ssl_record:ssl_version(),
                             encoded_record
                          }).
 
--endif. % -ifdef(tls_record_1_3).
+-endif. % -ifdef(xtls_record_1_3).

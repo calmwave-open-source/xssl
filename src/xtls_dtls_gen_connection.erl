@@ -65,7 +65,7 @@
          downgrade/3]).
 
 %%--------------------------------------------------------------------
--spec internal_renegotiation(pid(), xssl_record:connection_states()) ->
+-spec internal_renegotiation(pid(), ssl_record:connection_states()) ->
                                     ok.
 %%
 %% Description: Starts a renegotiation of the ssl session.
@@ -114,7 +114,7 @@ handle_peer_cert(Role, PeerCert, PublicKeyInfo,
 		 Connection, Actions) ->
     State1 = State0#state{handshake_env = HsEnv#handshake_env{public_key_info = PublicKeyInfo},
                           session = Session#session{peer_certificate = PeerCert#cert.der}},
-    #{key_exchange := KeyAlgorithm} = ssl_cipher_format:suite_bin_to_map(CipherSuite),
+    #{key_exchange := KeyAlgorithm} = xssl_cipher_format:suite_bin_to_map(CipherSuite),
     State = handle_peer_cert_key(Role, PublicKeyInfo, KeyAlgorithm, State1),
     Connection:next_event(certify, no_record, State, Actions).
 
@@ -209,7 +209,7 @@ finalize_handshake(State0, StateName, Connection) ->
 	State1 = cipher_protocol(State0, Connection),
 
     ConnectionStates =
-        xssl_record:activate_pending_connection_state(ConnectionStates0,
+        ssl_record:activate_pending_connection_state(ConnectionStates0,
                                                      write, Connection),
 
     State2 = State1#state{connection_states = ConnectionStates},
@@ -300,7 +300,7 @@ abbreviated(internal,
                    connection_states = ConnectionStates0,
                    handshake_env = HsEnv} = State) ->
     ConnectionStates1 =
-	xssl_record:activate_pending_connection_state(ConnectionStates0, read, Connection),
+	ssl_record:activate_pending_connection_state(ConnectionStates0, read, Connection),
     Connection:next_event(?STATE(abbreviated), no_record,
                           State#state{connection_states =
                                           ConnectionStates1,
@@ -334,7 +334,7 @@ cipher(internal, #change_cipher_spec{type = <<1>>},
               static_env = #static_env{protocol_cb = Connection},
               connection_states = ConnectionStates0} = State) ->
     ConnectionStates =
-	xssl_record:activate_pending_connection_state(ConnectionStates0, read, Connection),
+	ssl_record:activate_pending_connection_state(ConnectionStates0, read, Connection),
     Connection:next_event(?STATE(cipher), no_record,
                           State#state{handshake_env = HsEnv#handshake_env{expecting_finished = true},
                                       connection_states = ConnectionStates});
@@ -386,7 +386,7 @@ handle_call(renegotiate, From, StateName, _) when StateName =/= connection ->
 handle_call({export_key_materials, [Label], [Context0], [WantedLength], _}, From, _,
 	    #state{connection_states = ConnectionStates}) ->
     #{security_parameters := SecParams} =
-	xssl_record:current_connection_state(ConnectionStates, read),
+	ssl_record:current_connection_state(ConnectionStates, read),
     #security_parameters{master_secret = MasterSecret,
 			 client_random = ClientRandom,
 			 server_random = ServerRandom,
@@ -437,7 +437,7 @@ finished(#state{static_env = #static_env{role = Role},
                 connection_states = ConnectionStates0} = State0,
          StateName, Connection) ->
     MasterSecret = Session#session.master_secret,
-    #{security_parameters := SecParams} = xssl_record:current_connection_state(ConnectionStates0, write),
+    #{security_parameters := SecParams} = ssl_record:current_connection_state(ConnectionStates0, write),
     Finished = ssl_handshake:finished(xssl:tls_version(Version), Role,
                                       SecParams#security_parameters.prf_algorithm,
                                       MasterSecret, Hist),
@@ -446,13 +446,13 @@ finished(#state{static_env = #static_env{role = Role},
 								 ConnectionStates}).
 
 save_verify_data(client, #finished{verify_data = Data}, ConnectionStates, certify) ->
-    xssl_record:set_client_verify_data(current_write, Data, ConnectionStates);
+    ssl_record:set_client_verify_data(current_write, Data, ConnectionStates);
 save_verify_data(server, #finished{verify_data = Data}, ConnectionStates, cipher) ->
-    xssl_record:set_server_verify_data(current_both, Data, ConnectionStates);
+    ssl_record:set_server_verify_data(current_both, Data, ConnectionStates);
 save_verify_data(client, #finished{verify_data = Data}, ConnectionStates, abbreviated) ->
-    xssl_record:set_client_verify_data(current_both, Data, ConnectionStates);
+    ssl_record:set_client_verify_data(current_both, Data, ConnectionStates);
 save_verify_data(server, #finished{verify_data = Data}, ConnectionStates, abbreviated) ->
-    xssl_record:set_server_verify_data(current_write, Data, ConnectionStates).
+    ssl_record:set_server_verify_data(current_write, Data, ConnectionStates).
 
 master_secret(PremasterSecret, #state{static_env = #static_env{role = Role},
                                       connection_env = #connection_env{negotiated_version = Version},

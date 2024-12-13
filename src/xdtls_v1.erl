@@ -36,34 +36,34 @@
 
 -define(COOKIE_BASE_TIMEOUT, 30000).
 
--spec suites(xssl_record:ssl_version()) -> [ssl_cipher_format:cipher_suite()].
+-spec suites(ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 
 suites(Version) ->
     lists:filter(fun(Cipher) -> 
-                         is_acceptable_cipher(ssl_cipher_format:suite_bin_to_map(Cipher)) 
+                         is_acceptable_cipher(xssl_cipher_format:suite_bin_to_map(Cipher)) 
                  end,
                  xtls_v1:suites(corresponding_tls_version(Version))).
 all_suites(Version) ->
     lists:filter(fun(Cipher) -> 
-                         is_acceptable_cipher(ssl_cipher_format:suite_bin_to_map(Cipher)) 
+                         is_acceptable_cipher(xssl_cipher_format:suite_bin_to_map(Cipher)) 
                  end,
                  ssl_cipher:all_suites(corresponding_tls_version(Version))).
 
 anonymous_suites(Version) ->
     lists:filter(fun(Cipher) -> 
-                         is_acceptable_cipher(ssl_cipher_format:suite_bin_to_map(Cipher)) 
+                         is_acceptable_cipher(xssl_cipher_format:suite_bin_to_map(Cipher)) 
                  end, 
                  ssl_cipher:anonymous_suites(corresponding_tls_version(Version))).
 
 exclusive_suites(Version) ->
     lists:filter(fun(Cipher) ->
-                         is_acceptable_cipher(ssl_cipher_format:suite_bin_to_map(Cipher))
+                         is_acceptable_cipher(xssl_cipher_format:suite_bin_to_map(Cipher))
                  end,
                  xtls_v1:exclusive_suites(corresponding_tls_version(Version))).
 
 exclusive_anonymous_suites(Version) ->
     lists:filter(fun(Cipher) ->
-                         is_acceptable_cipher(ssl_cipher_format:suite_bin_to_map(Cipher))
+                         is_acceptable_cipher(xssl_cipher_format:suite_bin_to_map(Cipher))
                  end,
                  xtls_v1:exclusive_anonymous_suites(corresponding_tls_version(Version))).
 

@@ -29,12 +29,12 @@
 -include("xssl_connection.hrl").
 
 -record(protocol_buffers, {
-          xdtls_record_buffer = <<>>,      %% Buffer of incomplete records
+          dtls_record_buffer = <<>>,      %% Buffer of incomplete records
 	  dtls_handshake_next_seq = 0,
 	  xdtls_flight_last,
 	  dtls_handshake_next_fragments = [], %% Fragments of the next handshake message
 	  dtls_handshake_later_fragments = [], %% Fragments of handshake messages come after the one in next buffer
-	  xdtls_cipher_texts = []         %%:: [binary()],
+	  dtls_cipher_texts = []         %%:: [binary()],
 	 }).
 
 -define(INITIAL_RETRANSMIT_TIMEOUT, 1000). %1 sec

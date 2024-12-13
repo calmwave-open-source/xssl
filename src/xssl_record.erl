@@ -374,7 +374,7 @@ decipher(Version, CipherFragment,
 	    Alert
     end.
 %%--------------------------------------------------------------------
--spec decipher_aead(ssl_cipher:cipher_enum(),  #cipher_state{}, binary(), binary(), xssl_record:ssl_version()) ->
+-spec decipher_aead(ssl_cipher:cipher_enum(),  #cipher_state{}, binary(), binary(), ssl_record:ssl_version()) ->
 			   binary() | #alert{}.
 %%
 %% Description: Decrypts the data and checks the associated data (AAD) MAC using

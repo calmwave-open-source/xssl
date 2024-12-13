@@ -464,7 +464,7 @@ wait_finished(internal,
         ExporterMasterSecret = xtls_handshake_1_3:calculate_exporter_master_secret(State7),
         State8 = xtls_handshake_1_3:forget_master_secret(State7),
         %% Configure traffic keys
-        State9 = xssl_record:step_encryption_state(State8),
+        State9 = ssl_record:step_encryption_state(State8),
         {Record, #state{protocol_specific = PS} = State} =
             xssl_gen_statem:prepare_connection(State9, xtls_gen_connection),
 
@@ -524,7 +524,7 @@ maybe_send_early_data(#state{
                                                                         HKDF,
                                                                         State1),
             %% Set 0-RTT traffic keys for sending early_data and EndOfEarlyData
-            State3 = xssl_record:step_encryption_state_write(State2),
+            State3 = ssl_record:step_encryption_state_write(State2),
             {ok, xtls_handshake_1_3:encode_early_data(Cipher, State3)};
         {ok, {_, _, _, MaxSize}} ->
             {error, ?ALERT_REC(?FATAL, ?ILLEGAL_PARAMETER,
@@ -548,7 +548,7 @@ maybe_send_end_of_early_data(
     %% EndOfEarlydata is encrypted with the 0-RTT traffic keys
     State1 = Connection:queue_handshake(#end_of_early_data{}, State0),
     %% Use handshake keys after EndOfEarlyData is sent
-    xssl_record:step_encryption_state_write(State1);
+    ssl_record:step_encryption_state_write(State1);
 maybe_send_end_of_early_data(State) ->
     State.
 
@@ -779,7 +779,7 @@ handle_server_hello(#server_hello{cipher_suite = SelectedCipherSuite,
 
         #state{connection_states = ConnectionStates} = State2,
         #{security_parameters := SecParamsR} =
-        xssl_record:pending_connection_state(ConnectionStates, read),
+        ssl_record:pending_connection_state(ConnectionStates, read),
         #security_parameters{prf_algorithm = HKDFAlgo} = SecParamsR,
 
         PSK = Maybe(tls_handshake_1_3:get_pre_shared_key(SessionTickets,
@@ -791,7 +791,7 @@ handle_server_hello(#server_hello{cipher_suite = SelectedCipherSuite,
                                                           ClientPrivateKey,
                                                           SelectedGroup,
                                                           PSK, State2),
-        State4 = xssl_record:step_encryption_state_read(State3),
+        State4 = ssl_record:step_encryption_state_read(State3),
         {State4, wait_ee}
     catch
         {Ref, {State, StateName, ServerHello}} ->
@@ -897,10 +897,10 @@ maybe_check_early_data_indication(EarlyDataIndication,
        EarlyDataIndication =:= undefined ->
     signal_user_early_data(State, rejected),
     %% Use handshake keys if early_data is rejected.
-    xssl_record:step_encryption_state_write(State);
+    ssl_record:step_encryption_state_write(State);
 maybe_check_early_data_indication(_, State) ->
     %% Use handshake keys if there is no early_data.
-    xssl_record:step_encryption_state_write(State).
+    ssl_record:step_encryption_state_write(State).
 
 signal_user_early_data(#state{
                           connection_env = #connection_env{user_application = {_, User}},
@@ -921,7 +921,7 @@ maybe_max_fragment_length(Extensions, State) ->
 
 cipher_hash_algos(Ciphers) ->
     Fun = fun(Cipher) ->
-                  #{prf := Hash} = ssl_cipher_format:suite_bin_to_map(Cipher),
+                  #{prf := Hash} = xssl_cipher_format:suite_bin_to_map(Cipher),
                   Hash
           end,
     lists:map(Fun, Ciphers).

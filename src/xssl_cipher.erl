@@ -84,7 +84,7 @@
 -export_type([cipher_enum/0]).
 
 %%--------------------------------------------------------------------
--spec security_parameters(ssl_cipher_format:cipher_suite(), #security_parameters{}) ->
+-spec security_parameters(xssl_cipher_format:cipher_suite(), #security_parameters{}) ->
 				 #security_parameters{}.
 %% Only security_parameters/2 should call security_parameters/3 with undefined as
 %% first argument.
@@ -95,7 +95,7 @@ security_parameters(?TLS_NULL_WITH_NULL_NULL = CipherSuite, SecParams) ->
 
 %%--------------------------------------------------------------------
 -spec security_parameters(ssl_record:ssl_version() | undefined, 
-                          ssl_cipher_format:cipher_suite(), #security_parameters{}) ->
+                          xssl_cipher_format:cipher_suite(), #security_parameters{}) ->
 				 #security_parameters{}.
 %%
 %% Description: Returns a security parameters record where the
@@ -103,7 +103,7 @@ security_parameters(?TLS_NULL_WITH_NULL_NULL = CipherSuite, SecParams) ->
 %%-------------------------------------------------------------------
 security_parameters(Version, CipherSuite, SecParams) ->
     #{cipher := Cipher, mac := Hash, 
-      prf := PrfHashAlg} = ssl_cipher_format:suite_bin_to_map(CipherSuite),
+      prf := PrfHashAlg} = xssl_cipher_format:suite_bin_to_map(CipherSuite),
     SecParams#security_parameters{
       cipher_suite = CipherSuite,
       bulk_cipher_algorithm = bulk_cipher_algorithm(Cipher),
@@ -116,7 +116,7 @@ security_parameters(Version, CipherSuite, SecParams) ->
 
 security_parameters_1_3(SecParams, CipherSuite) ->
      #{cipher := Cipher, prf := PrfHashAlg} =
-        ssl_cipher_format:suite_bin_to_map(CipherSuite),
+        xssl_cipher_format:suite_bin_to_map(CipherSuite),
     SecParams#security_parameters{
       cipher_suite = CipherSuite,
       bulk_cipher_algorithm = bulk_cipher_algorithm(Cipher),
@@ -314,7 +314,7 @@ block_decipher(Fun, #cipher_state{key=Key, iv=IV} = CipherState0,
     end.
 
 %%--------------------------------------------------------------------
--spec suites(ssl_record:ssl_version()) -> [ssl_cipher_format:cipher_suite()].
+-spec suites(ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 %%
 %% Description: Returns a list of supported cipher suites.
 %%--------------------------------------------------------------------
@@ -344,7 +344,7 @@ tls_legacy_suites(Version) ->
     lists:flatmap(fun (Fun) -> Fun(Version) end, LegacySuites).
 
 %%--------------------------------------------------------------------
--spec anonymous_suites(ssl_record:ssl_version()) -> [ssl_cipher_format:cipher_suite()].
+-spec anonymous_suites(ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 %%
 %% Description: Returns a list of the anonymous cipher suites, only supported
 %% if explicitly set by user. Intended only for testing.
@@ -362,8 +362,8 @@ versions_included(?TLS_1_2) -> [?TLS_1_2, ?TLS_1_1, ?TLS_1_0];
 versions_included(?TLS_1_3) -> [?TLS_1_3].
 
 %%--------------------------------------------------------------------
--spec filter(undefined | binary(), [ssl_cipher_format:cipher_suite()],
-             ssl_record:ssl_version()) -> [ssl_cipher_format:cipher_suite()].
+-spec filter(undefined | binary(), [xssl_cipher_format:cipher_suite()],
+             ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 %%
 %% Description: Select the cipher suites that can be used together with the 
 %% supplied certificate. (Server side functionality)  
@@ -387,14 +387,14 @@ filter(DerCert, Ciphers0, Version) ->
     filter_suites_signature(Sign, Ciphers, Version).
 
 %%--------------------------------------------------------------------
--spec filter_suites([xssl:erl_cipher_suite()] | [ssl_cipher_format:cipher_suite()], map()) ->
-                           [xssl:erl_cipher_suite()] |  [ssl_cipher_format:cipher_suite()].
+-spec filter_suites([xssl:erl_cipher_suite()] | [xssl_cipher_format:cipher_suite()], map()) ->
+                           [xssl:erl_cipher_suite()] |  [xssl_cipher_format:cipher_suite()].
 %%
 %% Description: Filter suites using supplied filter funs
 %%-------------------------------------------------------------------	
 filter_suites(Suites, Filters) ->
     Fn = fun (Suite) when is_map_key(key_exchange, Suite) -> Suite;
-             (Suite) -> ssl_cipher_format:suite_bin_to_map(Suite)
+             (Suite) -> xssl_cipher_format:suite_bin_to_map(Suite)
          end,
     lists:filter(fun(Suite) -> filter_suite(Fn(Suite), Filters) end, Suites).
 
@@ -412,8 +412,8 @@ filter_suite(#{key_exchange := KeyExchange,
 
 
 %%--------------------------------------------------------------------
--spec filter_suites([xssl:erl_cipher_suite()] | [ssl_cipher_format:cipher_suite()]) -> 
-                           [xssl:erl_cipher_suite()] | [ssl_cipher_format:cipher_suite()].
+-spec filter_suites([xssl:erl_cipher_suite()] | [xssl_cipher_format:cipher_suite()]) -> 
+                           [xssl:erl_cipher_suite()] | [xssl_cipher_format:cipher_suite()].
 %%
 %% Description: Filter suites for algorithms supported by crypto.
 %%-------------------------------------------------------------------

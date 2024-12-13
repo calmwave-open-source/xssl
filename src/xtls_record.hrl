@@ -24,8 +24,8 @@
 %% see RFC 5246
 %%----------------------------------------------------------------------
 
--ifndef(tls_record).
--define(tls_record, true).
+-ifndef(xtls_record).
+-define(xtls_record, true).
 
 -include("xssl_record.hrl"). %% Common TLS and DTLS records and Constantes
 
@@ -37,4 +37,4 @@
                   early_data = false % TLS-1.3
                  }).
 
--endif. % -ifdef(tls_record).
+-endif. % -ifdef(xtls_record).

@@ -192,10 +192,10 @@ Special Erlang node configuration for the application can be found in
               socket_option/0,
               srp_param_type/0,
               sslsocket/0,
-              xtls_alert/0,
-              xtls_client_option/0,
+              tls_alert/0,
+              tls_client_option/0,
               xtls_option/0,
-              xtls_server_option/0,
+              tls_server_option/0,
               client_option_cert/0,
               server_option_cert/0,
               common_option_tls13/0
@@ -239,19 +239,19 @@ Note that despite being opaque, matching `sslsocket()` instances is allowed.
 -doc """
 An option related to the TLS/DTLS protocol.
 """.
--type xtls_option()               :: xtls_client_option() | xtls_server_option(). % exported
+-type xtls_option()               :: tls_client_option() | tls_server_option(). % exported
 
 -doc(#{title => <<"Socket">>}).
 -doc """
 An option that can be supplied to a TLS client.
 """.
--type xtls_client_option()        :: client_option() | common_option() | socket_option() |  transport_option(). % exported
+-type tls_client_option()        :: client_option() | common_option() | socket_option() |  transport_option(). % exported
 
 -doc(#{title => <<"Socket">>}).
 -doc """
 An option that can be supplied to a TLS server.
 """.
--type xtls_server_option()        :: server_option() | common_option() | socket_option() | transport_option(). % exported
+-type tls_server_option()        :: server_option() | common_option() | socket_option() | transport_option(). % exported
 
 -doc(#{title => <<"Socket">>}).
 -doc """
@@ -314,7 +314,7 @@ Identifies a TLS session prior to TLS-1.3.
 -doc """
 TLS or DTLS protocol version.
 """.
--type protocol_version()         :: tls_version() | xdtls_version(). % exported
+-type protocol_version()         :: tls_version() | dtls_version(). % exported
 
 -doc(#{title => <<"Socket">>}).
 -doc """
@@ -326,7 +326,7 @@ TLS protocol version.
 -doc """
 DTLS protocol version.
 """.
--type xdtls_version()             :: 'dtlsv1.2' | xdtls_legacy_version().
+-type dtls_version()             :: 'dtlsv1.2' | xdtls_legacy_version().
 
 -doc(#{title => <<"Socket">>}).
 -doc """
@@ -600,7 +600,7 @@ with some further details will be returned.
 -doc """
 TLS Alert Protocol reasons.
 """.
--type xtls_alert()             :: close_notify | 
+-type tls_alert()             :: close_notify | 
                                  unexpected_message | 
                                  bad_record_mac | 
                                  record_overflow | 
@@ -2475,7 +2475,7 @@ handshake(Socket, SslOptions, Timeout)
 -spec handshake_continue(HsSocket, Options) ->
           {ok, SslSocket} | {error, Reason} when
       HsSocket :: sslsocket(),
-      Options :: [tls_client_option() | xtls_server_option()],
+      Options :: [tls_client_option() | tls_server_option()],
       SslSocket :: sslsocket(),
       Reason :: closed | timeout | error_alert().
 %%--------------------------------------------------------------------
@@ -2489,7 +2489,7 @@ handshake_continue(Socket, SSLOptions) ->
 -spec handshake_continue(HsSocket, Options, Timeout) ->
           {ok, SslSocket} | {error, Reason} when
       HsSocket :: sslsocket(),
-      Options :: [tls_client_option() | xtls_server_option()],
+      Options :: [tls_client_option() | tls_server_option()],
       Timeout :: timeout(),
       SslSocket :: sslsocket(),
       Reason :: closed | timeout | error_alert().
@@ -3393,7 +3393,7 @@ versions() ->
     SupportedTLSVsns = [tls_record:protocol_version(Vsn) || Vsn <- ConfTLSVsns,  TLSCryptoSupported(Vsn)],
     SupportedDTLSVsns = [dtls_record:protocol_version(Vsn) || Vsn <- ConfDTLSVsns, DTLSCryptoSupported(Vsn)],
 
-    AvailableTLSVsns = [Vsn || Vsn <- ImplementedTLSVsns, TLSCryptoSupported(tls_record:protocol_version_name(Vsn))],
+    AvailableTLSVsns = [Vsn || Vsn <- ImplementedTLSVsns, TLSCryptoSupported(xtls_record:protocol_version_name(Vsn))],
     AvailableDTLSVsns = [Vsn || Vsn <- ImplementedDTLSVsns, DTLSCryptoSupported(dtls_record:protocol_version_name(Vsn))],
 
     [{ssl_app, ?VSN}, 
@@ -3638,7 +3638,7 @@ name string.
 """.
 %%--------------------------------------------------------------------
 suite_to_str(Cipher) ->
-    ssl_cipher_format:suite_map_to_str(Cipher).
+    xssl_cipher_format:suite_map_to_str(Cipher).
 
 %%--------------------------------------------------------------------
 -doc(#{title => <<"Utility Functions">>,
@@ -3654,7 +3654,7 @@ PRE TLS-1.3 these names differ for RFC names
 """.
 %%--------------------------------------------------------------------
 suite_to_openssl_str(Cipher) ->
-    ssl_cipher_format:suite_map_to_openssl_str(Cipher).
+    xssl_cipher_format:suite_map_to_openssl_str(Cipher).
 
 %%
 %%--------------------------------------------------------------------
@@ -3673,10 +3673,10 @@ str_to_suite(CipherSuiteName) ->
     try
         %% Note in TLS-1.3 OpenSSL conforms to RFC names
         %% so if CipherSuiteName starts with TLS this
-        %% function will call ssl_cipher_format:suite_str_to_map
+        %% function will call xssl_cipher_format:suite_str_to_map
         %% so both RFC names and legacy OpenSSL names of supported
         %% cipher suites will be handled
-        ssl_cipher_format:suite_openssl_str_to_map(CipherSuiteName)
+        xssl_cipher_format:suite_openssl_str_to_map(CipherSuiteName)
     catch
         _:_ ->
             {error, {not_recognized, CipherSuiteName}}
@@ -3696,13 +3696,13 @@ tls_version(Version) when ?DTLS_1_X(Version) ->
 %%% Internal function
 %%%--------------------------------------------------------------------
 do_cipher_suites(Description, Version) ->
-    [ssl_cipher_format:suite_bin_to_map(Suite) || Suite <- supported_suites(Description, Version)].
+    [xssl_cipher_format:suite_bin_to_map(Suite) || Suite <- supported_suites(Description, Version)].
 
 do_cipher_suites(Description, Version, rfc) ->
-    [ssl_cipher_format:suite_map_to_str(ssl_cipher_format:suite_bin_to_map(Suite))
+    [xssl_cipher_format:suite_map_to_str(xssl_cipher_format:suite_bin_to_map(Suite))
      || Suite <- supported_suites(Description, Version)];
 do_cipher_suites(Description, Version, openssl) ->
-    [ssl_cipher_format:suite_map_to_openssl_str(ssl_cipher_format:suite_bin_to_map(Suite))
+    [xssl_cipher_format:suite_map_to_openssl_str(xssl_cipher_format:suite_bin_to_map(Suite))
      || Suite <- supported_suites(Description, Version)].
 
 supported_suites(exclusive, Version) when ?TLS_1_X(Version) ->
@@ -3909,7 +3909,7 @@ validate_versions(tls, Vsns0) ->
                 end
         end,
     Vsns = [Validate(V) || V <- Vsns0],
-    xtls_validate_version_gap(Vsns0),
+    tls_validate_version_gap(Vsns0),
     option_error([] =:= Vsns, versions, Vsns0),
     lists:sort(fun xtls_record:is_higher/2, Vsns);
 validate_versions(dtls, Vsns0) ->
@@ -5008,10 +5008,10 @@ binary_cipher_suites([Version| _], []) ->
     %% not require explicit configuration
     default_binary_suites(default, Version);
 binary_cipher_suites(Versions, [Map|_] = Ciphers0) when is_map(Map) ->
-    Ciphers = [ssl_cipher_format:suite_map_to_bin(C) || C <- Ciphers0],
+    Ciphers = [xssl_cipher_format:suite_map_to_bin(C) || C <- Ciphers0],
     binary_cipher_suites(Versions, Ciphers);
 binary_cipher_suites(Versions, [Tuple|_] = Ciphers0) when is_tuple(Tuple) ->
-    Ciphers = [ssl_cipher_format:suite_map_to_bin(tuple_to_map(C)) || C <- Ciphers0],
+    Ciphers = [xssl_cipher_format:suite_map_to_bin(tuple_to_map(C)) || C <- Ciphers0],
     binary_cipher_suites(Versions, Ciphers);
 binary_cipher_suites(Versions, [Cipher0 | _] = Ciphers0) when is_binary(Cipher0) ->
     All = all_suites(Versions),
@@ -5025,11 +5025,11 @@ binary_cipher_suites(Versions, [Cipher0 | _] = Ciphers0) when is_binary(Cipher0)
     end;
 binary_cipher_suites(Versions, [Head | _] = Ciphers0) when is_list(Head) ->
     %% Format: ["RC4-SHA","RC4-MD5"]
-    Ciphers = [ssl_cipher_format:suite_openssl_str_to_map(C) || C <- Ciphers0],
+    Ciphers = [xssl_cipher_format:suite_openssl_str_to_map(C) || C <- Ciphers0],
     binary_cipher_suites(Versions, Ciphers);
 binary_cipher_suites(Versions, Ciphers0)  ->
     %% Format: "RC4-SHA:RC4-MD5"
-    Ciphers = [ssl_cipher_format:suite_openssl_str_to_map(C) || C <- string:lexemes(Ciphers0, ":")],
+    Ciphers = [xssl_cipher_format:suite_openssl_str_to_map(C) || C <- string:lexemes(Ciphers0, ":")],
     binary_cipher_suites(Versions, Ciphers).
 
 default_binary_suites(exclusive, Version) ->

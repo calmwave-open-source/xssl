@@ -66,7 +66,7 @@ MODULES= \
 	ssl_app \
 	ssl_certificate \
 	ssl_cipher \
-	ssl_cipher_format \
+	xssl_cipher_format \
 	ssl_client_session_cache_db \
 	ssl_config \
 	ssl_connection_sup \
@@ -84,7 +84,7 @@ MODULES= \
 	ssl_manager \
 	ssl_pem_cache \
 	ssl_pkix_db \
-	xssl_record \
+	ssl_record \
 	ssl_server_session_cache \
 	ssl_server_session_cache_db \
 	ssl_server_session_cache_sup \
@@ -130,7 +130,7 @@ INTERNAL_HRL_FILES = \
 	ssl_connection.hrl \
 	ssl_handshake.hrl \
 	ssl_internal.hrl \
-	xssl_record.hrl \
+	ssl_record.hrl \
 	ssl_srp.hrl \
 	tls_connection.hrl \
 	tls_handshake.hrl \
