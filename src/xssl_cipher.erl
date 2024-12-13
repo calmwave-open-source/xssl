@@ -1213,7 +1213,7 @@ generate_key_exchange(x25519) ->
 generate_key_exchange(x448) ->
     crypto:generate_key(ecdh, x448);
 generate_key_exchange(FFDHE) ->
-    public_key:generate_key(ssl_dh_groups:dh_params(FFDHE)).
+    public_key:generate_key(xssl_dh_groups:dh_params(FFDHE)).
 
 
 %% TODO: Move this functionality to crypto!

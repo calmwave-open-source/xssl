@@ -151,7 +151,7 @@ init([Role, Sender |[Host, Port, _Socket, {TLSOpts, _, _}, _User, _CbInfo] = Ini
     end,
 
     init_label(Role, Host, Port, TLSOpts),
-    Tab = ets:new(tls_socket, []),
+    Tab = ets:new(xtls_socket, []),
 
     case Role of
         ?CLIENT_ROLE ->
@@ -173,7 +173,7 @@ init([Role | [Host, Port, _Socket, {DTLSOpts,_,_}, _User, _CbInfo] = InitArgs]) 
     process_flag(trap_exit, true),
 
     init_label(Role, Host, Port, DTLSOpts),
-    Tab = ets:new(tls_socket, []),
+    Tab = ets:new(xtls_socket, []),
 
     case Role of
         ?CLIENT_ROLE ->

@@ -45,7 +45,7 @@ start_link() ->
         {ok, [File]} ->
             DistOpts = consult(File),
             TabOpts = [set, protected, named_table],
-            Tab = ets:new(ssl_dist_opts, TabOpts),
+            Tab = ets:new(xssl_dist_opts, TabOpts),
             true = ets:insert(Tab, DistOpts),
             supervisor:start_link({local, ?MODULE}, ?MODULE, []);
         {ok, BadArg} ->
@@ -71,20 +71,20 @@ init([]) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 ssl_admin_child_spec() ->
-    #{id       => ssl_dist_admin_sup,
-      start    =>  {ssl_dist_admin_sup, start_link , []},
+    #{id       => xssl_dist_admin_sup,
+      start    =>  {xssl_dist_admin_sup, start_link , []},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [ssl_dist_admin_sup],
+      modules  => [xssl_dist_admin_sup],
       type     => supervisor
      }.
     
 ssl_connection_sup() ->
     #{id       => xtls_dist_sup,
-      start    => {tls_dist_sup, start_link, []},
+      start    => {xtls_dist_sup, start_link, []},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [tls_dist_sup],
+      modules  => [xtls_dist_sup],
       type     => supervisor
      }.
 

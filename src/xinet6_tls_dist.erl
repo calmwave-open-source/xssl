@@ -29,27 +29,27 @@
 -define(FAMILY, inet6).
 
 childspecs() ->
-    inet_tls_dist:childspecs().
+    xinet_tls_dist:childspecs().
 
 select(Node) ->
-    inet_tls_dist:fam_select(?FAMILY, Node).
+    xinet_tls_dist:fam_select(?FAMILY, Node).
 
 address() ->
-    inet_tls_dist:fam_address(?FAMILY).
+    xinet_tls_dist:fam_address(?FAMILY).
 
 listen(Name, Host) ->
-    inet_tls_dist:fam_listen(?FAMILY, Name, Host).
+    xinet_tls_dist:fam_listen(?FAMILY, Name, Host).
 
 accept(Listen) ->
-    inet_tls_dist:fam_accept(?FAMILY, Listen).
+    xinet_tls_dist:fam_accept(?FAMILY, Listen).
 
 accept_connection(AcceptPid, Socket, MyNode, Allowed, SetupTime) ->
-    inet_tls_dist:fam_accept_connection(
+    xinet_tls_dist:fam_accept_connection(
       ?FAMILY, AcceptPid, Socket, MyNode, Allowed, SetupTime).
 
 setup(Node, Type, MyNode, LongOrShortNames,SetupTime) ->
-    inet_tls_dist:fam_setup(
+    xinet_tls_dist:fam_setup(
       ?FAMILY, Node, Type, MyNode, LongOrShortNames,SetupTime).
 
 close(Socket) ->
-    inet_tls_dist:close(Socket).
+    xinet_tls_dist:close(Socket).

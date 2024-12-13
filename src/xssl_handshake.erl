@@ -1193,7 +1193,7 @@ premaster_secret(#client_srp_public{srp_a = ClientPublicKey}, ServerKey, #srp_us
     end;
 premaster_secret(#server_srp_params{srp_n = Prime, srp_g = Generator, srp_s = Salt, srp_b = Public},
 		 ClientKeys, {Username, Password}) ->
-    case ssl_srp_primes:check_srp_params(Generator, Prime) of
+    case xssl_srp_primes:check_srp_params(Generator, Prime) of
 	ok ->
 	    DerivedKey = crypto:hash(sha, [Salt, crypto:hash(sha, [Username, <<$:>>, Password])]),
 	    try crypto:compute_key(srp, Public, ClientKeys, {user, [DerivedKey, Prime, Generator, '6a']})
@@ -2312,7 +2312,7 @@ maybe_check_crl(OtpCert, #{crl_check := Check,
                      certdb_ref := CertDbRef,
                      crl_db := {Callback, CRLDbHandle}}, _, CertPath, LogLevel) ->
     Options = [{issuer_fun, {fun(_DP, CRL, Issuer, DBInfo) ->
-				     ssl_crl:trusted_cert_and_path(CRL, Issuer, CertPath,
+				     xssl_crl:trusted_cert_and_path(CRL, Issuer, CertPath,
                                                                    DBInfo)
 			     end, {CertDbHandle, CertDbRef}}}, 
 	       {update_crl, fun(DP, CRL) ->

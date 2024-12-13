@@ -54,16 +54,16 @@ create(PEMCacheName) ->
     [%% Let connection process delete trusted certs
      %% that can only belong to one connection. (Supplied directly
      %% on DER format to xssl:connect/listen.)
-     ets:new(ssl_otp_cacertificate_db, [set, public, {read_concurrency, true}]),
+     ets:new(xssl_otp_cacertificate_db, [set, public, {read_concurrency, true}]),
      %% Let connection processes call ref_count/3 directly
-     {ets:new(ssl_otp_ca_file_ref, [set, public]),
-      ets:new(ssl_otp_ca_ref_file_mapping, [set, protected])
+     {ets:new(xssl_otp_ca_file_ref, [set, public]),
+      ets:new(xssl_otp_ca_ref_file_mapping, [set, protected])
      },
      %% Lookups in named table owned by xssl_pem_cache process
      PEMCacheName,
      %% Default cache
-     {ets:new(ssl_otp_crl_cache, [set, protected]),
-      ets:new(ssl_otp_crl_issuer_mapping, [bag, protected])}
+     {ets:new(xssl_otp_crl_cache, [set, protected]),
+      ets:new(xssl_otp_crl_issuer_mapping, [bag, protected])}
     ].
 
 create_pem_cache(Name) ->

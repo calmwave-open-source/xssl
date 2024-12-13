@@ -45,98 +45,98 @@ BEHAVIOUR_MODULES= \
 
 
 MODULES= \
-	dtls_server_connection \
+	xdtls_server_connection \
         xdtls_client_connection \
-	dtls_connection_sup \
-	dtls_handshake \
-	dxtls_gen_connection \
-	dtls_listener_sup \
-	dtls_packet_demux \
-	dtls_record \
-	dtls_server_sup\
-	dtls_server_session_cache_sup\
-	dtls_sup \
+	xdtls_connection_sup \
+	xdtls_handshake \
+	xdxtls_gen_connection \
+	xdtls_listener_sup \
+	xdtls_packet_demux \
+	xdtls_record \
+	xdtls_server_sup\
+	xdtls_server_session_cache_sup\
+	xdtls_sup \
 	xdtls_socket \
-	dtls_v1 \
-	inet_tls_dist \
-	inet6_tls_dist \
-	ssl \
-	ssl_admin_sup \
+	xdtls_v1 \
+	xinet_tls_dist \
+	xinet6_tls_dist \
+	xssl \
+	xssl_admin_sup \
 	xssl_alert \
-	ssl_app \
+	xssl_app \
 	xssl_certificate \
 	xssl_cipher \
 	xssl_cipher_format \
-	ssl_client_session_cache_db \
-	ssl_config \
-	ssl_connection_sup \
-	ssl_crl \
-	ssl_crl_cache \
-	ssl_crl_hash_dir \
-	ssl_dh_groups \
-	ssl_dist_admin_sup \
-	ssl_dist_connection_sup \
-	ssl_dist_sup \
+	xssl_client_session_cache_db \
+	xssl_config \
+	xssl_connection_sup \
+	xssl_crl \
+	xssl_crl_cache \
+	xssl_crl_hash_dir \
+	xssl_dh_groups \
+	xssl_dist_admin_sup \
+	xssl_dist_connection_sup \
+	xssl_dist_sup \
         xssl_gen_statem \
 	xssl_handshake \
-	ssl_listen_tracker_sup \
-	ssl_logger \
+	xssl_listen_tracker_sup \
+	xssl_logger \
 	xssl_manager \
 	xssl_pem_cache \
 	xssl_pkix_db \
 	xssl_record \
-	ssl_server_session_cache \
-	ssl_server_session_cache_db \
-	ssl_server_session_cache_sup \
-	ssl_upgrade_server_session_cache_sup \
-	ssl_session \
-	ssl_srp_primes \
-	ssl_sup \
-	tls_bloom_filter \
-	tls_dtls_client_connection \
-	tls_dtls_server_connection \
-	tls_dxtls_gen_connection \
-	tls_server_connection \
-	tls_client_connection \
-	tls_connection_sup \
-	tls_server_connection_1_3 \
-	tls_client_connection_1_3 \
+	xssl_server_session_cache \
+	xssl_server_session_cache_db \
+	xssl_server_session_cache_sup \
+	xssl_upgrade_server_session_cache_sup \
+	xssl_session \
+	xssl_srp_primes \
+	xssl_sup \
+	xtls_bloom_filter \
+	xtls_dtls_client_connection \
+	xtls_dtls_server_connection \
+	xtls_dxtls_gen_connection \
+	xtls_server_connection \
+	xtls_client_connection \
+	xtls_connection_sup \
+	xtls_server_connection_1_3 \
+	xtls_client_connection_1_3 \
 	xtls_gen_connection_1_3 \
         xtls_gen_connection \
-	tls_handshake \
-	tls_handshake_1_3 \
-	tls_record \
-	tls_record_1_3 \
-	tls_client_ticket_store \
-	tls_dist_sup \
-	tls_dist_server_sup \
-	tls_dyn_connection_sup\
-	tls_sender \
-	tls_server_session_ticket\
-	tls_server_session_ticket_sup\
-	tls_server_sup\
-	tls_socket \
-	tls_sup \
+	xtls_handshake \
+	xtls_handshake_1_3 \
+	xtls_record \
+	xtls_record_1_3 \
+	xtls_client_ticket_store \
+	xtls_dist_sup \
+	xtls_dist_server_sup \
+	xtls_dyn_connection_sup\
+	xtls_sender \
+	xtls_server_session_ticket\
+	xtls_server_session_ticket_sup\
+	xtls_server_sup\
+	xtls_socket \
+	xtls_sup \
 	tls_v1
 
 
 INTERNAL_HRL_FILES = \
-	dtls_connection.hrl \
-	dtls_handshake.hrl \
-	dtls_record.hrl \
+	xdtls_connection.hrl \
+	xdtls_handshake.hrl \
+	xdtls_record.hrl \
 	xssl_alert.hrl \
-	ssl_api.hrl \
+	xssl_api.hrl \
 	xssl_cipher.hrl \
-	ssl_connection.hrl \
+	xssl_connection.hrl \
 	xssl_handshake.hrl \
-	ssl_internal.hrl \
+	xssl_internal.hrl \
 	xssl_record.hrl \
-	ssl_srp.hrl \
-	tls_connection.hrl \
-	tls_handshake.hrl \
-	tls_handshake_1_3.hrl \
-	tls_record.hrl \
-	tls_record_1_3.hrl
+	xssl_srp.hrl \
+	xtls_connection.hrl \
+	xtls_handshake.hrl \
+	xtls_handshake_1_3.hrl \
+	xtls_record.hrl \
+	xtls_record_1_3.hrl
 
 
 ERL_FILES= \

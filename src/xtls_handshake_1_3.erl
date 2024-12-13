@@ -1102,7 +1102,7 @@ calculate_shared_secret(OthersKey, MyKey, Group)
 %% FFDHE
 calculate_shared_secret(OthersKey, MyKey, Group)
   when is_binary(OthersKey) andalso is_binary(MyKey) ->
-    Params = #'DHParameter'{prime = P} = ssl_dh_groups:dh_params(Group),
+    Params = #'DHParameter'{prime = P} = xssl_dh_groups:dh_params(Group),
     S = public_key:compute_key(OthersKey, MyKey, Params),
     Size = byte_size(binary:encode_unsigned(P)),
     xssl_cipher:add_zero_padding(S, Size);
@@ -1715,8 +1715,8 @@ truncate_client_hello(HelloBin0) ->
     %% The original length of the binders can still be determined by
     %% re-encoding the original ClientHello and using its size as reference
     %% when we subtract the size of the truncated binary.
-    TruncatedSize = iolist_size(tls_handshake:encode_handshake(CH, ?TLS_1_3)),
-    RefSize = iolist_size(tls_handshake:encode_handshake(CH0, ?TLS_1_3)),
+    TruncatedSize = iolist_size(xtls_handshake:encode_handshake(CH, ?TLS_1_3)),
+    RefSize = iolist_size(xtls_handshake:encode_handshake(CH0, ?TLS_1_3)),
     BindersSize = RefSize - TruncatedSize,
 
     %% Return the truncated ClientHello by cutting of the binders from the original

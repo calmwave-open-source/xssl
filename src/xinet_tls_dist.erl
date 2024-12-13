@@ -58,8 +58,8 @@
 %% -------------------------------------------------------------------------
 
 childspecs() ->
-    {ok, [{ssl_dist_sup,{ssl_dist_sup, start_link, []},
-	   permanent, infinity, supervisor, [ssl_dist_sup]}]}.
+    {ok, [{xssl_dist_sup,{xssl_dist_sup, start_link, []},
+	   permanent, infinity, supervisor, [xssl_dist_sup]}]}.
 
 %% -------------------------------------------------------------------------
 %% Select this protocol based on node name

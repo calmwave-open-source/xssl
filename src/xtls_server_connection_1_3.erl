@@ -282,10 +282,10 @@ wait_cv(internal,
           #certificate_verify_1_3{} = CertificateVerify, State0) ->
     {Ref,Maybe} = xtls_gen_connection_1_3:do_maybe(),
     try
-        State1 = Maybe(tls_handshake_1_3:verify_signature_algorithm(State0,
+        State1 = Maybe(xtls_handshake_1_3:verify_signature_algorithm(State0,
                                                                     CertificateVerify)),
         {State, NextState} =
-            Maybe(tls_handshake_1_3:verify_certificate_verify(State1, CertificateVerify)),
+            Maybe(xtls_handshake_1_3:verify_certificate_verify(State1, CertificateVerify)),
         xtls_gen_connection:next_event(NextState, no_record, State)
     catch
         {Ref, {#alert{} = Alert, AState}} ->
@@ -308,7 +308,7 @@ wait_finished(internal,
              #finished{verify_data = VerifyData}, State0) ->
     {Ref,Maybe} = xtls_gen_connection_1_3:do_maybe(),
     try
-        Maybe(tls_handshake_1_3:validate_finished(State0, VerifyData)),
+        Maybe(xtls_handshake_1_3:validate_finished(State0, VerifyData)),
 
         State1 = xtls_handshake_1_3:calculate_traffic_secrets(State0),
         State2 = xtls_handshake_1_3:maybe_calculate_resumption_master_secret(State1),
@@ -406,9 +406,9 @@ do_handle_client_hello(#client_hello{cipher_suites = ClientCiphers,
               } = State1 =
             Maybe(xssl_gen_statem:handle_sni_extension(SNI, State0)),
 
-        ClientGroups0 = Maybe(tls_handshake_1_3:supported_groups_from_extensions(Extensions)),
-        ClientGroups = Maybe(tls_handshake_1_3:get_supported_groups(ClientGroups0)),
-        ServerGroups = Maybe(tls_handshake_1_3:get_supported_groups(ServerGroups0)),
+        ClientGroups0 = Maybe(xtls_handshake_1_3:supported_groups_from_extensions(Extensions)),
+        ClientGroups = Maybe(xtls_handshake_1_3:get_supported_groups(ClientGroups0)),
+        ServerGroups = Maybe(xtls_handshake_1_3:get_supported_groups(ServerGroups0)),
 
         ClientShares = maps:get(key_share, Extensions, []),
         OfferedPSKs = maps:get(pre_shared_key, Extensions, undefined),
@@ -434,7 +434,7 @@ do_handle_client_hello(#client_hello{cipher_suites = ClientCiphers,
         %% and a signature algorithm/certificate pair to authenticate itself to
         %% the client.
         Cipher = Maybe(select_cipher_suite(HonorCipherOrder, ClientCiphers, ServerCiphers)),
-        Groups = Maybe(tls_handshake_1_3:select_common_groups(ServerGroups, ClientGroups)),
+        Groups = Maybe(xtls_handshake_1_3:select_common_groups(ServerGroups, ClientGroups)),
         Maybe(validate_client_key_share(ClientGroups,
                                         ClientShares#key_share_client_hello.client_shares)),
         CertKeyPairs = xssl_certificate:available_cert_key_pairs(CertKeyAlts, ?TLS_1_3),
@@ -445,7 +445,7 @@ do_handle_client_hello(#client_hello{cipher_suites = ClientCiphers,
         {PublicKeyAlgo, _, _, RSAKeySize, Curve} = xtls_handshake_1_3:get_certificate_params(Cert),
 
         %% Select signature algorithm (used in CertificateVerify message).
-        SelectedSignAlg = Maybe(tls_handshake_1_3:select_sign_algo(PublicKeyAlgo,
+        SelectedSignAlg = Maybe(xtls_handshake_1_3:select_sign_algo(PublicKeyAlgo,
                                                                    RSAKeySize, ClientSignAlgs,
                                                                    ServerSignAlgs, Curve)),
 
@@ -502,7 +502,7 @@ do_handle_client_hello(#client_hello{cipher_suites = ClientCiphers,
                 %% Determine if early data is accepted
                 State = handle_early_data(State5, EarlyDataEnabled, EarlyDataIndication),
                 %% Exclude any incompatible PSKs.
-                PSK = Maybe(tls_handshake_1_3:handle_pre_shared_key(State, OfferedPSKs, Cipher)),
+                PSK = Maybe(xtls_handshake_1_3:handle_pre_shared_key(State, OfferedPSKs, Cipher)),
                 Maybe(session_resumption({State, negotiated}, PSK))
         end
     catch

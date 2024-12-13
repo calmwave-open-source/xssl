@@ -447,7 +447,7 @@ resumed_server_hello(#state{session = Session,
 	    State1 = State0#state{connection_states = ConnectionStates1,
 				  session = Session},
 	    {State, Actions} =
-		tls_dxtls_gen_connection:finalize_handshake(State1, abbreviated, Connection),
+		xtls_dxtls_gen_connection:finalize_handshake(State1, abbreviated, Connection),
 	    Connection:next_event(abbreviated, no_record, State, Actions);
 	#alert{} = Alert ->
             throw(Alert)
@@ -796,7 +796,7 @@ handle_srp_identity(Username, {Fun, UserState}) ->
     case Fun(srp, Username, UserState) of
 	{ok, {SRPParams, Salt, DerivedKey}}
 	  when is_atom(SRPParams), is_binary(Salt), is_binary(DerivedKey) ->
-	    {Generator, Prime} = ssl_srp_primes:get_srp_params(SRPParams),
+	    {Generator, Prime} = xssl_srp_primes:get_srp_params(SRPParams),
 	    Verifier = crypto:mod_pow(Generator, DerivedKey, Prime),
 	    #srp_user{generator = Generator, prime = Prime,
 		      salt = Salt, verifier = Verifier};
@@ -822,7 +822,7 @@ maybe_register_session(#{reuse_sessions := true},
                        _Host, _Port, Trackers, #session{is_resumable = false} = Session0) ->
     Tracker = proplists:get_value(session_id_tracker, Trackers),
     Session = Session0#session{is_resumable = true},
-    ssl_server_session_cache:register_session(Tracker, Session),
+    xssl_server_session_cache:register_session(Tracker, Session),
     Session;
 maybe_register_session(_,_,_,_, Session) ->
     Session.

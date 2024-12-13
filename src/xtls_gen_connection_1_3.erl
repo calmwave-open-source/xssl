@@ -325,7 +325,7 @@ update_cipher_key(ConnStateName, CS0) ->
 do_wait_cert(#certificate_1_3{} = Certificate, State0) ->
     {Ref,Maybe} = do_maybe(),
     try
-        Maybe(tls_handshake_1_3:process_certificate(Certificate, State0))
+        Maybe(xtls_handshake_1_3:process_certificate(Certificate, State0))
     catch
         {Ref, #alert{} = Alert} ->
             {Alert, State0};

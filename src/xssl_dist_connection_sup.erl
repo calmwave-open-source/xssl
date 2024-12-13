@@ -57,9 +57,9 @@ init([]) ->
 
 tls_sup_child_spec() ->
     #{id       => xtls_dist_sup,
-      start    => {tls_dist_sup, start_link, []},
+      start    => {xtls_dist_sup, start_link, []},
       restart  => permanent, 
       shutdown => 4000,
-      modules  => [tls_dist_sup],
+      modules  => [xtls_dist_sup],
       type     => supervisor
      }.

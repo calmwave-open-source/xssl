@@ -43,7 +43,7 @@
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 start_child(Listener) ->
-    supervisor:start_child(?MODULE, [Listener | [ssl_config:pre_1_3_session_opts(server)]]).
+    supervisor:start_child(?MODULE, [Listener | [xssl_config:pre_1_3_session_opts(server)]]).
 
 %%%=========================================================================
 %%%  Supervisor callback

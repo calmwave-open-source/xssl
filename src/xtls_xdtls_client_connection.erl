@@ -94,7 +94,7 @@ abbreviated(internal, #finished{verify_data = Data} = Finished,
 	    ConnectionStates1 =
 		xssl_record:set_server_verify_data(current_read, Data, ConnectionStates0),
 	    {#state{handshake_env = HsEnv} = State1, Actions} =
-		tls_dxtls_gen_connection:finalize_handshake(
+		xtls_dxtls_gen_connection:finalize_handshake(
                   State0#state{connection_states = ConnectionStates1},
                   ?STATE(abbreviated), Connection),
 	    {Record, State} =

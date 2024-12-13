@@ -65,7 +65,7 @@ pem_cache_child_spec() ->
       type      => worker
      }.
 session_and_cert_manager_child_spec() ->
-    Opts = ssl_admin_sup:manager_opts(),
+    Opts = xssl_admin_sup:manager_opts(),
     #{id       => ssl_dist_manager,
       start    => {xssl_manager, start_link_dist, [Opts]},
       restart  => permanent, 

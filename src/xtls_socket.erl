@@ -300,11 +300,11 @@ session_id_tracker(_, #{versions := [?TLS_1_3]}) ->
 %% to generate session ids, but no sessions will be stored unless
 %% reuse_sessions = true.
 session_id_tracker(_, #{erl_dist := true}) ->
-    ssl_upgrade_server_session_cache_sup:start_child(dist);
+    xssl_upgrade_server_session_cache_sup:start_child(dist);
 session_id_tracker(ssl_unknown_listener, _) ->
-    ssl_upgrade_server_session_cache_sup:start_child(normal);
+    xssl_upgrade_server_session_cache_sup:start_child(normal);
 session_id_tracker(ListenSocket, _) ->
-    ssl_server_session_cache_sup:start_child(ListenSocket).
+    xssl_server_session_cache_sup:start_child(ListenSocket).
        
 get_emulated_opts(TrackerPid) -> 
     call(TrackerPid, get_emulated_opts).

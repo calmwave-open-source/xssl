@@ -56,8 +56,8 @@
 -define(EMPTY_ID, <<>>).
 -define(NUM_OF_SESSION_ID_BYTES, 32).  % TSL 1.1 & SSL 3
 -define(NUM_OF_PREMASTERSECRET_BYTES, 48).
--define(DEFAULT_DIFFIE_HELLMAN_GENERATOR, ssl_dh_groups:modp2048_generator()).
--define(DEFAULT_DIFFIE_HELLMAN_PRIME, ssl_dh_groups:modp2048_prime()).
+-define(DEFAULT_DIFFIE_HELLMAN_GENERATOR, xssl_dh_groups:modp2048_generator()).
+-define(DEFAULT_DIFFIE_HELLMAN_PRIME, xssl_dh_groups:modp2048_prime()).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Handshake protocol - RFC 4346 section 7.4

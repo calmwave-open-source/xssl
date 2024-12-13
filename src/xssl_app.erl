@@ -42,11 +42,11 @@ stop(_State) ->
 start_logger() ->
     Config = #{level => debug,
                filter_default => stop,
-               formatter => {ssl_logger, #{}}},
+               formatter => {xssl_logger, #{}}},
     Filter = {fun logger_filters:domain/2,{log,sub,[otp,xssl]}},
     logger:add_handler(ssl_handler, logger_std_h, Config),
     logger:add_handler_filter(ssl_handler, filter_non_ssl, Filter),
-    logger:set_module_level([ssl_logger],
+    logger:set_module_level([xssl_logger],
                             debug).
 
 %%

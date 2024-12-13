@@ -123,7 +123,7 @@ format(#{msg:= {report, Msg}}, _Config0) ->
             BinMsg =
                 case Content of
                     #ssl_tls{} ->
-                        [tls_record:build_tls_record(Content)];
+                        [xtls_record:build_tls_record(Content)];
                     _ when is_list(Content) ->
                         lists:flatten(Content)
                 end,
