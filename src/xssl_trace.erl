@@ -470,7 +470,7 @@ trace_profiles() ->
        {xssl_certificate, [{validate, 4}, {trusted_cert_and_paths, 4},
                           {certificate_chain, 3}, {certificate_chain, 5},
                           {issuer, 1}]},
-       {ssl_cipher, [{filter, 3}]},
+       {xssl_cipher, [{filter, 3}]},
        {xssl_gen_statem, [{initial_hello, 3}]},
        {ssl_handshake, [{path_validate, 11}, {path_validation, 10},
                         {select_hashsign, 5}, {get_cert_params, 1},

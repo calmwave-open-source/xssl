@@ -92,7 +92,7 @@ abbreviated(internal, #finished{verify_data = Data} = Finished,
 					 MasterSecret, Hist0) of
         verified ->
 	    ConnectionStates1 =
-		ssl_record:set_server_verify_data(current_read, Data, ConnectionStates0),
+		xssl_record:set_server_verify_data(current_read, Data, ConnectionStates0),
 	    {#state{handshake_env = HsEnv} = State1, Actions} =
 		tls_dtls_gen_connection:finalize_handshake(
                   State0#state{connection_states = ConnectionStates1},
@@ -317,7 +317,7 @@ certify(internal, #server_hello_done{},
                session = #session{master_secret = undefined},
 	       ssl_options = #{user_lookup_fun := PSKLookup}} = State0)
   when KexAlg == rsa_psk ->
-    Rand = ssl_cipher:random_bytes(?NUM_OF_PREMASTERSECRET_BYTES-2),
+    Rand = xssl_cipher:random_bytes(?NUM_OF_PREMASTERSECRET_BYTES-2),
     RSAPremasterSecret = <<?BYTE(Major), ?BYTE(Minor), Rand/binary>>,
     case ssl_handshake:premaster_secret({KexAlg, PSKIdentity}, PSKLookup,
 					RSAPremasterSecret) of
@@ -390,14 +390,14 @@ cipher(internal, #finished{verify_data = Data} = Finished,
 	      = Session0,
               ssl_options = SslOpts,
 	      connection_states = ConnectionStates0} = State0) ->
-    #{security_parameters := SecParams} = ssl_record:current_connection_state(ConnectionStates0, read),
+    #{security_parameters := SecParams} = xssl_record:current_connection_state(ConnectionStates0, read),
     case ssl_handshake:verify_connection(xssl:tls_version(Version), Finished,
 					 xssl_gen_statem:opposite_role(Role),
                                          SecParams#security_parameters.prf_algorithm,
 					 MasterSecret, Hist) of
         verified ->
 	    Session = maybe_register_session(SslOpts, Host, Port, Trackers, Session0),
-            ConnectionStates = ssl_record:set_server_verify_data(current_both, Data,
+            ConnectionStates = xssl_record:set_server_verify_data(current_both, Data,
                                                                  ConnectionStates0),
             {Record, State} =
                 xssl_gen_statem:prepare_connection(State0#state{session = Session,
@@ -451,8 +451,8 @@ downgrade(Type, Event, State) ->
 %%====================================================================
 
 %%--------------------------------------------------------------------
--spec handle_session(#server_hello{}, ssl_record:ssl_version(),
-		     binary(), ssl_record:connection_states(), _,_, #state{}) ->
+-spec handle_session(#server_hello{}, xssl_record:ssl_version(),
+		     binary(), xssl_record:connection_states(), _,_, #state{}) ->
 			    gen_statem:state_function_result().
 %%--------------------------------------------------------------------
 handle_session(#server_hello{cipher_suite = CipherSuite},
@@ -830,7 +830,7 @@ handle_peer_cert_key(_, _, _, State) ->
     State.
 
 get_pending_prf(CStates, Direction) ->
-    #{security_parameters := SecParams} = ssl_record:pending_connection_state(CStates, Direction),
+    #{security_parameters := SecParams} = xssl_record:pending_connection_state(CStates, Direction),
     SecParams#security_parameters.prf_algorithm.
 
 session_handle_params(#server_ecdh_params{curve = ECCurve}, Session) ->

@@ -33,7 +33,7 @@
 -include("xtls_record.hrl"). 
 %% enum {
 %%         invalid(0),
-%%         %% defined in ssl_record.hrl
+%%         %% defined in xssl_record.hrl
 %%         change_cipher_spec(20),
 %%         alert(21),
 %%         handshake(22),
@@ -50,7 +50,7 @@
                             %% decrypted version will still use #ssl_tls for code reuse purposes
                             %% with real values for content type and version
                             opaque_type = ?OPAQUE_TYPE,
-                            legacy_version = ?LEGACY_VERSION :: ssl_record:ssl_version(),
+                            legacy_version = ?LEGACY_VERSION :: xssl_record:ssl_version(),
                             encoded_record
                          }).
 

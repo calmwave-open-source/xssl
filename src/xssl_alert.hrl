@@ -24,8 +24,8 @@
 %% see RFC 2246
 %%----------------------------------------------------------------------
 
--ifndef(ssl_alert).
--define(ssl_alert, true).
+-ifndef(xssl_alert).
+-define(xssl_alert, true).
 %%-define(ssl_debug, true).
 -include_lib("kernel/include/logger.hrl").
 
@@ -134,4 +134,4 @@
           role,
           reason
 	 }).
--endif. % -ifdef(ssl_alert).
+-endif. % -ifdef(xssl_alert).

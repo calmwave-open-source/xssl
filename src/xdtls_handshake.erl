@@ -47,7 +47,7 @@
 %% Handshake handling
 %%====================================================================
 %%--------------------------------------------------------------------
--spec client_hello(xssl:host(), inet:port_number(), ssl_record:connection_states(),
+-spec client_hello(xssl:host(), inet:port_number(), xssl_record:connection_states(),
 		   ssl_options(), binary(), boolean()) ->
           #client_hello{}.
 %%
@@ -60,7 +60,7 @@ client_hello(Host, Port, ConnectionStates, SslOpts,
 		 Id, Renegotiation,  undefined).
 
 %%--------------------------------------------------------------------
--spec client_hello(xssl:host(), inet:port_number(), term(), ssl_record:connection_states(),
+-spec client_hello(xssl:host(), inet:port_number(), term(), xssl_record:connection_states(),
 		   ssl_options(), binary(),boolean(), binary() | undefined) ->
 			  #client_hello{}.
 %%
@@ -72,7 +72,7 @@ client_hello(_Host, _Port, Cookie, ConnectionStates,
                fallback := Fallback} = SslOpts,
 	     Id, Renegotiation, OcspNonce) ->
     Version =  xdtls_record:highest_protocol_version(Versions),
-    Pending = ssl_record:pending_connection_state(ConnectionStates, read),
+    Pending = xssl_record:pending_connection_state(ConnectionStates, read),
     SecParams = maps:get(security_parameters, Pending),
     TLSVersion = xdtls_v1:corresponding_tls_version(Version),
     CipherSuites = ssl_handshake:available_suites(UserSuites, TLSVersion),
@@ -127,7 +127,7 @@ cookie(Key, Address, Port, #client_hello{client_version = Version,
 		  Random, SessionId, CipherSuites, [?NO_COMPRESSION]],
     crypto:mac(hmac, sha, Key, CookieData).
 %%--------------------------------------------------------------------
--spec hello_verify_request(binary(),  ssl_record:ssl_version()) -> #hello_verify_request{}.
+-spec hello_verify_request(binary(),  xssl_record:ssl_version()) -> #hello_verify_request{}.
 %%
 %% Description: Creates a hello verify request message sent by server to
 %% verify client

@@ -41,8 +41,8 @@
 %%====================================================================
 
 %%--------------------------------------------------------------------
--spec encode_handshake(iolist(), ssl_record:connection_states()) ->
-			      {iolist(), ssl_record:connection_states()}.
+-spec encode_handshake(iolist(), xssl_record:connection_states()) ->
+			      {iolist(), xssl_record:connection_states()}.
 %
 %% Description: Encodes a handshake message to send on the xtls-1.3-socket.
 %%--------------------------------------------------------------------
@@ -57,8 +57,8 @@ encode_handshake(Frag,ConnectionStates) ->
     end.
 
 %%--------------------------------------------------------------------
--spec encode_alert_record(#alert{}, ssl_record:connection_states()) ->
-				 {iolist(), ssl_record:connection_states()}.
+-spec encode_alert_record(#alert{}, xssl_record:connection_states()) ->
+				 {iolist(), xssl_record:connection_states()}.
 %%
 %% Description: Encodes an alert message to send on the ssl-socket.
 %%--------------------------------------------------------------------
@@ -67,8 +67,8 @@ encode_alert_record(#alert{level = Level, description = Description},
     encode_plain_text(?ALERT, <<?BYTE(Level), ?BYTE(Description)>>,
 		      ConnectionStates).
 %%--------------------------------------------------------------------
--spec encode_data(iolist(), ssl_record:connection_states()) ->
-			 {iolist(), ssl_record:connection_states()}.
+-spec encode_data(iolist(), xssl_record:connection_states()) ->
+			 {iolist(), xssl_record:connection_states()}.
 %%
 %% Description: Encodes data to send on the ssl-socket.
 %%--------------------------------------------------------------------
@@ -95,9 +95,9 @@ encode_iolist(_Type, [], CS, Encoded) ->
 %%====================================================================
 
 %%--------------------------------------------------------------------
--spec decode_cipher_text(#ssl_tls{}, ssl_record:connection_states()) ->
+-spec decode_cipher_text(#ssl_tls{}, xssl_record:connection_states()) ->
 				{#ssl_tls{} | no_record,
-                                 ssl_record:connection_states()}| #alert{}.
+                                 xssl_record:connection_states()}| #alert{}.
 %%
 %% Description: Decode cipher text, use legacy type ssl_tls instead of
 %% xtls_cipher_text in decoding context so that we can reuse the code
@@ -299,7 +299,7 @@ cipher_aead(Fragment, BulkCipherAlgo, Key, Seq, IV, TagLen) ->
     AAD = additional_data(erlang:iolist_size(Fragment) + TagLen),
     Nonce = nonce(Seq, IV),
     {Content, CipherTag} =
-        ssl_cipher:aead_encrypt(BulkCipherAlgo, Key, Nonce, Fragment, AAD, TagLen),
+        xssl_cipher:aead_encrypt(BulkCipherAlgo, Key, Nonce, Fragment, AAD, TagLen),
     <<Content/binary, CipherTag/binary>>.
 
 encode_tls_cipher_text(Type, {MajVer,MinVer}, Encoded) ->
@@ -314,7 +314,7 @@ decipher_aead(CipherFragment0, BulkCipherAlgo, Key, Seq, IV, TagLen) ->
         Nonce = nonce(Seq, IV),
         CipherLen = FragLen - TagLen,
         <<CipherText:CipherLen/bytes, CipherTag:TagLen/bytes>> = CipherFragment,
-	case ssl_cipher:aead_decrypt(BulkCipherAlgo, Key, Nonce, CipherText, CipherTag, AAD) of
+	case xssl_cipher:aead_decrypt(BulkCipherAlgo, Key, Nonce, CipherText, CipherTag, AAD) of
 	    Content when is_binary(Content) ->
 		Content;
 	    Reason ->

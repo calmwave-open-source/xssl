@@ -106,7 +106,7 @@
 
 server_hello(MsgType, SessionId, KeyShare, PSK, ConnectionStates) ->
     #{security_parameters := SecParams} =
-	ssl_record:pending_connection_state(ConnectionStates, read),
+	xssl_record:pending_connection_state(ConnectionStates, read),
     Extensions = server_hello_extensions(MsgType, KeyShare, PSK),
     #server_hello{server_version = ?LEGACY_VERSION, %% legacy_version
 		  cipher_suite = SecParams#security_parameters.cipher_suite,
@@ -169,7 +169,7 @@ maybe_add_cookie_extension(#state{connection_states = ConnectionStates,
     %% Encrypt MessageHash
     IV = crypto:strong_rand_bytes(16),
     Shard = crypto:strong_rand_bytes(32),
-    Cookie = ssl_cipher:encrypt_data(<<"cookie">>, MessageHash, Shard, IV),
+    Cookie = xssl_cipher:encrypt_data(<<"cookie">>, MessageHash, Shard, IV),
 
     HsEnv = HsEnv0#handshake_env{cookie_iv_shard = {IV, Shard}},
     Extensions = Extensions0#{cookie => #cookie{cookie = Cookie}},
@@ -323,11 +323,11 @@ certificate_verify(PrivateKey, SignatureScheme,
                               #handshake_env{
                                  tls_handshake_history = {Messages, _}}}, Role) ->
     #{security_parameters := SecParamsR} =
-        ssl_record:pending_connection_state(ConnectionStates, write),
+        xssl_record:pending_connection_state(ConnectionStates, write),
     #security_parameters{prf_algorithm = HKDFAlgo} = SecParamsR,
 
     {HashAlgo, SignAlgo, _} =
-        ssl_cipher:scheme_to_components(SignatureScheme),
+        xssl_cipher:scheme_to_components(SignatureScheme),
 
     Context = lists:reverse(Messages),
 
@@ -370,7 +370,7 @@ finished(#state{connection_states = ConnectionStates,
                        tls_handshake_history = {Messages, _}}}) ->
     #{security_parameters := SecParamsR,
      cipher_state := #cipher_state{finished_key = FinishedKey}} =
-        ssl_record:current_connection_state(ConnectionStates, write),
+        xssl_record:current_connection_state(ConnectionStates, write),
     #security_parameters{prf_algorithm = HKDFAlgo} = SecParamsR,
 
     VerifyData = xtls_v1:finished_verify_data(FinishedKey, HKDFAlgo, Messages),
@@ -442,7 +442,7 @@ process_certificate(#certificate_1_3{
     %% the server should also change its connection state and use the traffic
     %% secrets.
     State1 = calculate_traffic_secrets(State0),
-    State = ssl_record:step_encryption_state(State1),
+    State = xssl_record:step_encryption_state(State1),
     {error, {?ALERT_REC(?FATAL, ?CERTIFICATE_REQUIRED, certificate_required), State}};
 process_certificate(#certificate_1_3{certificate_list = CertEntries},
                     #state{ssl_options = SslOptions,
@@ -477,11 +477,11 @@ verify_certificate_verify(#state{static_env = #static_env{role = Role},
                              algorithm = SignatureScheme,
                              signature = Signature}) ->
     #{security_parameters := SecParamsR} =
-        ssl_record:pending_connection_state(ConnectionStates, write),
+        xssl_record:pending_connection_state(ConnectionStates, write),
     #security_parameters{prf_algorithm = HKDFAlgo} = SecParamsR,
 
     {HashAlgo, SignAlg, _} =
-        ssl_cipher:scheme_to_components(SignatureScheme),
+        xssl_cipher:scheme_to_components(SignatureScheme),
 
     Messages = get_handshake_context_cv(HHistory),
 
@@ -499,12 +499,12 @@ verify_certificate_verify(#state{static_env = #static_env{role = Role},
             {ok, {State0, wait_finished}};
         {ok, false} ->
             State1 = calculate_traffic_secrets(State0),
-            State = ssl_record:step_encryption_state(State1),
+            State = xssl_record:step_encryption_state(State1),
             {error, {?ALERT_REC(?FATAL, ?HANDSHAKE_FAILURE,
                                 "Failed to verify CertificateVerify"), State}};
         {error, #alert{} = Alert} ->
             State1 = calculate_traffic_secrets(State0),
-            State = ssl_record:step_encryption_state(State1),
+            State = xssl_record:step_encryption_state(State1),
             {error, {Alert, State}}
     end.
 
@@ -517,7 +517,7 @@ validate_finished(#state{connection_states = ConnectionStates,
                                 tls_handshake_history = {Messages0, _}}}, VerifyData) ->
     #{security_parameters := SecParamsR,
       cipher_state := #cipher_state{finished_key = FinishedKey}} =
-        ssl_record:current_connection_state(ConnectionStates, read),
+        xssl_record:current_connection_state(ConnectionStates, read),
     #security_parameters{prf_algorithm = HKDFAlgo} = SecParamsR,
 
     %% Drop the peer's finished message, it is not part of the handshake context
@@ -588,7 +588,7 @@ encode_early_data(Cipher,
                                      early_data := EarlyData} = _SslOpts0
                     } = State0) ->
     #{current_write := #{security_parameters := SecurityParameters0} = Write0} = ConnectionStates0,
-    BulkCipherAlgo = ssl_cipher:bulk_cipher_algorithm(Cipher),
+    BulkCipherAlgo = xssl_cipher:bulk_cipher_algorithm(Cipher),
     SecurityParameters = SecurityParameters0#security_parameters{
                            cipher_type = ?AEAD,
                            bulk_cipher_algorithm = BulkCipherAlgo},
@@ -642,7 +642,7 @@ decode_handshake(?CERTIFICATE, <<?BYTE(CSize), Context:CSize/binary,
        certificate_list = CertList
       };
 decode_handshake(?CERTIFICATE_VERIFY, <<?UINT16(EncAlgo), ?UINT16(Size), Signature:Size/binary>>) ->
-    Algorithm = ssl_cipher:signature_scheme(EncAlgo),
+    Algorithm = xssl_cipher:signature_scheme(EncAlgo),
     #certificate_verify_1_3{
        algorithm = Algorithm,
        signature = Signature};
@@ -703,7 +703,7 @@ encode_cert_entries([#certificate_entry{data = Data,
                         [<<?UINT24(DSize), Data/binary, BinExts/binary>> | Acc]).
 
 encode_algorithm(Algo) ->
-    Scheme = ssl_cipher:signature_scheme(Algo),
+    Scheme = xssl_cipher:signature_scheme(Algo),
     <<?UINT16(Scheme)>>.
 
 encode_signature(Signature) ->
@@ -805,7 +805,7 @@ build_content(Context, THash) ->
 %%              already stepped into the 'connection' state.
 update_encryption_state(server, State0) ->
     State1 = calculate_traffic_secrets(State0),
-    ssl_record:step_encryption_state(State1);
+    xssl_record:step_encryption_state(State1);
 update_encryption_state(client, State) ->
     State.
 
@@ -871,7 +871,7 @@ replace_ch1_with_message_hash(#state{connection_states = ConnectionStates,
                                             tls_handshake_history =
                                                 {[HRR,CH1|HHistory], LM}} = HSEnv}  = State0) ->
     #{security_parameters := SecParamsR} =
-        ssl_record:pending_connection_state(ConnectionStates, read),
+        xssl_record:pending_connection_state(ConnectionStates, read),
     #security_parameters{prf_algorithm = HKDFAlgo} = SecParamsR,
     MessageHash = message_hash(CH1, HKDFAlgo),
     State0#state{handshake_env =
@@ -881,13 +881,13 @@ replace_ch1_with_message_hash(#state{connection_states = ConnectionStates,
 
 get_hkdf_algorithm(ConnectionStates) ->
     #{security_parameters := SecParamsR} =
-        ssl_record:pending_connection_state(ConnectionStates, read),
+        xssl_record:pending_connection_state(ConnectionStates, read),
     #security_parameters{prf_algorithm = HKDFAlgo} = SecParamsR,
     HKDFAlgo.
 
 message_hash(ClientHello1, HKDFAlgo) ->
     [?MESSAGE_HASH,
-     0,0,ssl_cipher:hash_size(HKDFAlgo),
+     0,0,xssl_cipher:hash_size(HKDFAlgo),
      crypto:hash(HKDFAlgo, ClientHello1)].
 
 
@@ -897,7 +897,7 @@ calculate_handshake_secrets(PublicKey, PrivateKey, SelectedGroup, PSK,
                                          #handshake_env{
                                             tls_handshake_history = HHistory}} = State0) ->
     #{security_parameters := SecParamsR} =
-        ssl_record:pending_connection_state(ConnectionStates, read),
+        xssl_record:pending_connection_state(ConnectionStates, read),
     #security_parameters{prf_algorithm = HKDFAlgo,
                          cipher_suite = CipherSuite} = SecParamsR,
     EarlySecret = xtls_v1:key_schedule(early_secret, HKDFAlgo , {psk, PSK}),
@@ -935,7 +935,7 @@ calculate_client_early_traffic_secret(#state{connection_states = ConnectionState
                                                     tls_handshake_history = {Hist, _}}} = State, PSK) ->
 
     #{security_parameters := SecParamsR} =
-        ssl_record:pending_connection_state(ConnectionStates, read),
+        xssl_record:pending_connection_state(ConnectionStates, read),
     #security_parameters{cipher_suite = CipherSuite} = SecParamsR,
     #{cipher := Cipher,
       prf := HKDF} = xssl_cipher_format:suite_bin_to_map(CipherSuite),
@@ -951,13 +951,13 @@ calculate_client_early_traffic_secret(
     ClientEarlyTrafficSecret =
         xtls_v1:client_early_traffic_secret(HKDFAlgo, EarlySecret, ClientHello),
     %% Calculate traffic key
-    KeyLength = ssl_cipher:key_material(Cipher),
+    KeyLength = xssl_cipher:key_material(Cipher),
     {Key, IV} =
         xtls_v1:calculate_traffic_keys(HKDFAlgo, KeyLength, ClientEarlyTrafficSecret),
     %% Update pending connection states
     case Role of
         client ->
-            PendingWrite0 = ssl_record:pending_connection_state(ConnectionStates, write),
+            PendingWrite0 = xssl_record:pending_connection_state(ConnectionStates, write),
             PendingWrite1 = maybe_store_early_data_secret(Opts, ClientEarlyTrafficSecret,
                                                           PendingWrite0),
             PendingWrite = update_connection_state(PendingWrite1, undefined, undefined,
@@ -965,7 +965,7 @@ calculate_client_early_traffic_secret(
                                                    Key, IV, undefined),
             State0#state{connection_states = ConnectionStates#{pending_write => PendingWrite}};
         server ->
-            PendingRead0 = ssl_record:pending_connection_state(ConnectionStates, read),
+            PendingRead0 = xssl_record:pending_connection_state(ConnectionStates, read),
             PendingRead1 = maybe_store_early_data_secret(Opts, ClientEarlyTrafficSecret,
                                                          PendingRead0),
             PendingRead = update_connection_state(PendingRead1, undefined, undefined,
@@ -985,29 +985,29 @@ maybe_store_early_data_secret(_, _, State) ->
 
 %% Server
 %% get_pre_shared_key(undefined, HKDFAlgo) ->
-%%     binary:copy(<<0>>, ssl_cipher:hash_size(HKDFAlgo));
+%%     binary:copy(<<0>>, xssl_cipher:hash_size(HKDFAlgo));
 %% get_pre_shared_key(#pre_shared_key_server_hello{selected_identity = PSK}, _) ->
 %%     PSK.
 get_pre_shared_key(undefined, HKDFAlgo) ->
-    binary:copy(<<0>>, ssl_cipher:hash_size(HKDFAlgo));
+    binary:copy(<<0>>, xssl_cipher:hash_size(HKDFAlgo));
 get_pre_shared_key({_, PSK}, _) ->
     PSK.
 %%
 %% Client
 %% Server initiates a full handshake
 get_pre_shared_key(_, _, HKDFAlgo, undefined) ->
-    {ok, binary:copy(<<0>>, ssl_cipher:hash_size(HKDFAlgo))};
+    {ok, binary:copy(<<0>>, xssl_cipher:hash_size(HKDFAlgo))};
 %% Session resumption not configured
 get_pre_shared_key(undefined, _, HKDFAlgo, _) ->
-    {ok, binary:copy(<<0>>, ssl_cipher:hash_size(HKDFAlgo))};
+    {ok, binary:copy(<<0>>, xssl_cipher:hash_size(HKDFAlgo))};
 get_pre_shared_key(_, undefined, HKDFAlgo, _) ->
-    {ok, binary:copy(<<0>>, ssl_cipher:hash_size(HKDFAlgo))};
+    {ok, binary:copy(<<0>>, xssl_cipher:hash_size(HKDFAlgo))};
 %% Session resumption
 get_pre_shared_key(manual = SessionTickets, UseTicket, HKDFAlgo, ServerPSK) ->
     TicketData = get_ticket_data(self(), SessionTickets, UseTicket),
     case choose_psk(TicketData, ServerPSK) of
         undefined -> %% full handshake, default PSK
-            {ok, binary:copy(<<0>>, ssl_cipher:hash_size(HKDFAlgo))};
+            {ok, binary:copy(<<0>>, xssl_cipher:hash_size(HKDFAlgo))};
         illegal_parameter ->
             {error, ?ALERT_REC(?FATAL, ?ILLEGAL_PARAMETER)};
         {_, PSK, _, _, _} ->
@@ -1018,7 +1018,7 @@ get_pre_shared_key(auto = SessionTickets, UseTicket, HKDFAlgo, ServerPSK) ->
     case choose_psk(TicketData, ServerPSK) of
         undefined -> %% full handshake, default PSK
             xtls_client_ticket_store:unlock_tickets(self(), UseTicket),
-            {ok, binary:copy(<<0>>, ssl_cipher:hash_size(HKDFAlgo))};
+            {ok, binary:copy(<<0>>, xssl_cipher:hash_size(HKDFAlgo))};
         illegal_parameter ->
             xtls_client_ticket_store:unlock_tickets(self(), UseTicket),
             {error, ?ALERT_REC(?FATAL, ?ILLEGAL_PARAMETER)};
@@ -1067,7 +1067,7 @@ calculate_traffic_secrets(#state{
                                  #handshake_env{
                                     tls_handshake_history = HHistory}} = State0) ->
     #{security_parameters := SecParamsR} =
-        ssl_record:pending_connection_state(ConnectionStates, read),
+        xssl_record:pending_connection_state(ConnectionStates, read),
     #security_parameters{prf_algorithm = HKDFAlgo,
                          cipher_suite = CipherSuite,
                          master_secret = HandshakeSecret} = SecParamsR,
@@ -1105,7 +1105,7 @@ calculate_shared_secret(OthersKey, MyKey, Group)
     Params = #'DHParameter'{prime = P} = ssl_dh_groups:dh_params(Group),
     S = public_key:compute_key(OthersKey, MyKey, Params),
     Size = byte_size(binary:encode_unsigned(P)),
-    ssl_cipher:add_zero_padding(S, Size);
+    xssl_cipher:add_zero_padding(S, Size);
 %% ECDHE
 calculate_shared_secret(OthersKey, MyKey = #'ECPrivateKey'{}, _Group)
   when is_binary(OthersKey) ->
@@ -1123,7 +1123,7 @@ maybe_calculate_resumption_master_secret(#state{
                                                    tls_handshake_history = HHistory}} = State)
   when SessionTickets =/= disabled  ->
     #{security_parameters := SecParamsR} =
-        ssl_record:pending_connection_state(ConnectionStates, read),
+        xssl_record:pending_connection_state(ConnectionStates, read),
     #security_parameters{master_secret = MasterSecret,
                          prf_algorithm = HKDFAlgo} = SecParamsR,
     {Messages0, _} = HHistory,
@@ -1137,7 +1137,7 @@ calculate_exporter_master_secret(#state{
                                  #handshake_env{
                                     tls_handshake_history = HHistory}}) ->
     #{security_parameters := SecParamsR} =
-        ssl_record:pending_connection_state(ConnectionStates, read),
+        xssl_record:pending_connection_state(ConnectionStates, read),
     #security_parameters{prf_algorithm = HKDFAlgo,
                          master_secret = MasterSecret} = SecParamsR,
     Messages = get_handshake_context(Role, HHistory),
@@ -1262,8 +1262,8 @@ update_start_state(#state{connection_states = ConnectionStates0,
         maps:get(pending_read, ConnectionStates0),
     #{security_parameters := SecParamsW0} = PendingWrite =
         maps:get(pending_write, ConnectionStates0),
-    SecParamsR1 = ssl_cipher:security_parameters_1_3(SecParamsR0, Cipher),
-    SecParamsW1 = ssl_cipher:security_parameters_1_3(SecParamsW0, Cipher),
+    SecParamsR1 = xssl_cipher:security_parameters_1_3(SecParamsR0, Cipher),
+    SecParamsW1 = xssl_cipher:security_parameters_1_3(SecParamsW0, Cipher),
 
     SecParamsR = update_random(Role, SecParamsR1, Random),
     SecParamsW = update_random(Role, SecParamsW1, Random),
@@ -1400,7 +1400,7 @@ verify_signature_algorithm(#state{
             {ok, maybe_update_selected_sign_alg(State0, PeerSignAlg, Role)};
         false ->
             State1 = calculate_traffic_secrets(State0),
-            State = ssl_record:step_encryption_state(State1),
+            State = xssl_record:step_encryption_state(State1),
             {error, {?ALERT_REC(?FATAL, ?HANDSHAKE_FAILURE,
                                 "CertificateVerify uses unsupported signature algorithm"), State}}
     end.
@@ -1471,7 +1471,7 @@ select_sign_algo(_, _RSAKeySize, [], _, _) ->
 select_sign_algo(_, _RSAKeySize, undefined, _OwnSignAlgs, _) ->
     {error, ?ALERT_REC(?FATAL, ?INSUFFICIENT_SECURITY, no_suitable_public_key)};
 select_sign_algo(PublicKeyAlgo, RSAKeySize, [CertSignAlg|CertSignAlgs], OwnSignAlgs, Curve) ->
-    {_, S, _} = ssl_cipher:scheme_to_components(CertSignAlg),
+    {_, S, _} = xssl_cipher:scheme_to_components(CertSignAlg),
     %% RSASSA-PKCS1-v1_5 and Legacy algorithms are not defined for use in signed
     %% TLS handshake messages: filter sha-1 and rsa_pkcs1.
     %%
@@ -1496,7 +1496,7 @@ select_sign_algo(PublicKeyAlgo, RSAKeySize, [CertSignAlg|CertSignAlgs], OwnSignA
 validate_key_compatibility(PublicKeyAlgo, RSAKeySize, [CertSignAlg|CertSignAlgs], OwnSignAlgs, Curve)
   when PublicKeyAlgo =:= rsa orelse
        PublicKeyAlgo =:= rsa_pss_pss ->
-    {Hash, Sign, _} = ssl_cipher:scheme_to_components(CertSignAlg),
+    {Hash, Sign, _} = xssl_cipher:scheme_to_components(CertSignAlg),
     case (Sign =:= rsa_pss_rsae orelse Sign =:= rsa_pss_pss) andalso
         is_rsa_key_compatible(RSAKeySize, Hash) of
         true ->
@@ -1506,7 +1506,7 @@ validate_key_compatibility(PublicKeyAlgo, RSAKeySize, [CertSignAlg|CertSignAlgs]
     end;
 validate_key_compatibility(PublicKeyAlgo, RSAKeySize, [CertSignAlg|CertSignAlgs], OwnSignAlgs, Curve)
   when PublicKeyAlgo =:= ecdsa ->
-    {_ , Sign, PeerCurve} = ssl_cipher:scheme_to_components(CertSignAlg),
+    {_ , Sign, PeerCurve} = xssl_cipher:scheme_to_components(CertSignAlg),
     case Sign =:= ecdsa andalso Curve =:= PeerCurve of
         true ->
             {ok, CertSignAlg};
@@ -1517,7 +1517,7 @@ validate_key_compatibility(_, _, [CertSignAlg|_], _, _) ->
     {ok, CertSignAlg}.
 
 is_rsa_key_compatible(KeySize, Hash) ->
-    HashSize = ssl_cipher:hash_size(Hash),
+    HashSize = xssl_cipher:hash_size(Hash),
 
     %% OpenSSL crypto lib defines a limit on the size of the random salt
     %% in PSS signatures based on the size of signing RSA key.
@@ -1541,7 +1541,7 @@ do_check_cert_sign_algo(_, _, []) ->
     {error, ?ALERT_REC(?FATAL, ?INSUFFICIENT_SECURITY, no_suitable_signature_algorithm)};
 do_check_cert_sign_algo(SignAlgo, SignHash, [Scheme|T]) ->
     %% ECDSA: curve is tied to the hash algorithm e.g. ecdsa_secp256r1_sha256
-    {Hash, Sign, _Curve} = ssl_cipher:scheme_to_components(Scheme),
+    {Hash, Sign, _Curve} = xssl_cipher:scheme_to_components(Scheme),
     case compare_sign_algos(SignAlgo, SignHash, Sign, Hash) of
         true ->
             ok;

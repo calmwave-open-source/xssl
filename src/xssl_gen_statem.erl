@@ -601,6 +601,18 @@ connection({call, From},
                  } = State) ->
     alert_user(UserSocket, From, Alert, Role, ?STATE(connection), Connection),
     {stop, {shutdown, normal}, State};
+%%%%%% PATCH TO FIX ORACLE DOWNGRADE BUG %%%%%%%%%
+ connection({call, From}, 
+           {close,{NewController, _Timeout}},
+           #state{connection_env = #connection_env{socket_tls_closed = false} = CEnv,
+                 protocol_specific = PS} = State) ->
+            {next_state, downgrade, State#state{connection_env =
+                                                    CEnv#connection_env{downgrade = {NewController, From}},
+                                                protocol_specific = PS#{active_n_toggle => true,
+                                                                        active_n => 1}
+                                               },
+            [{next_event, internal, ?ALERT_REC(?WARNING, ?CLOSE_NOTIFY)}]};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 connection({call, From}, 
            {close,{NewController, Timeout}},
            #state{connection_states = ConnectionStates,
@@ -1811,10 +1823,10 @@ alert_user(_UserSocket, false = Active, Pid, From,  Alert, Role, StateName, Conn
     %% If there is an outstanding handshake | recv
     %% From will be defined and send_or_reply will
     %% send the appropriate error message.
-    ReasonCode = ssl_alert:reason_code(Alert, Role, Connection:protocol_name(), StateName),
+    ReasonCode = xssl_alert:reason_code(Alert, Role, Connection:protocol_name(), StateName),
     send_or_reply(Active, Pid, From, {error, ReasonCode});
 alert_user(UserSocket, Active, Pid, From, Alert, Role, StateName, Connection) ->
-    case ssl_alert:reason_code(Alert, Role, Connection:protocol_name(), StateName) of
+    case xssl_alert:reason_code(Alert, Role, Connection:protocol_name(), StateName) of
 	closed ->
 	    send_or_reply(Active, Pid, From, {ssl_closed, UserSocket});
 	ReasonCode ->
@@ -1884,7 +1896,7 @@ security_info(#state{connection_states = ConnectionStates,
                      static_env = #static_env{role = Role},
                      ssl_options = Opts,
                      protocol_specific = ProtocolSpecific}) ->
-    ReadState = ssl_record:current_connection_state(ConnectionStates, read),
+    ReadState = xssl_record:current_connection_state(ConnectionStates, read),
     #{security_parameters :=
 	  #security_parameters{client_random = ClientRand,
                                server_random = ServerRand,
@@ -1902,7 +1914,7 @@ security_info(#state{connection_states = ConnectionStates,
                   #security_parameters{
                      application_traffic_secret = AppTrafSecretWrite0,
                      client_early_data_secret = ClientEarlyData}} =
-                ssl_record:current_connection_state(ConnectionStates, write),
+                xssl_record:current_connection_state(ConnectionStates, write),
             Sender = maps:get(sender, ProtocolSpecific, undefined),
             AppTrafSecretWrite = {Sender, AppTrafSecretWrite0},
             if Role == server ->

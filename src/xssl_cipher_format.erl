@@ -31,7 +31,7 @@
 -include("xssl_internal.hrl").
 -include_lib("public_key/include/public_key.hrl").
 
--export_type([old_erl_cipher_suite/0, openssl_cipher_suite/0, cipher_suite/0]).
+-export_type([old_erl_cipher_suite/0, openxssl_cipher_suite/0, cipher_suite/0]).
 
 -type internal_cipher()            :: null | xssl:cipher().
 -type internal_hash()              :: null | xssl:hash().
@@ -46,7 +46,7 @@
                               | {xssl:kex_algo(), internal_cipher(), internal_hash(), 
                                  internal_hash() | default_prf}. 
 -type cipher_suite()      :: binary().
--type openssl_cipher_suite()  :: string().
+-type openxssl_cipher_suite()  :: string().
 
 
 -export([suite_map_to_bin/1,            %% Binary format  
@@ -115,7 +115,7 @@ suite_map_to_openssl_str(#{key_exchange := rsa = Kex,
                            cipher := Cipher,
                            mac := aead,
                            prf := PRF}) when PRF =/= default_prf ->
-    openssl_cipher_name(Kex, string:to_upper(atom_to_list(Cipher))) ++
+    openxssl_cipher_name(Kex, string:to_upper(atom_to_list(Cipher))) ++
         "-" ++ string:to_upper(atom_to_list(PRF));
 suite_map_to_openssl_str(#{key_exchange := Kex,
                            cipher := Cipher,
@@ -124,26 +124,26 @@ suite_map_to_openssl_str(#{key_exchange := Kex,
                                              andalso 
                                              (Cipher == "des_cbc") orelse
                                              (Cipher == "3des_ede_cbc") ->
-    openssl_cipher_name(Kex, string:to_upper(atom_to_list(Cipher))) ++
+    openxssl_cipher_name(Kex, string:to_upper(atom_to_list(Cipher))) ++
         "-" ++ string:to_upper(atom_to_list(Mac));
 suite_map_to_openssl_str(#{key_exchange := Kex,
                            cipher := chacha20_poly1305 = Cipher,
                            mac := aead,
                            prf := sha256}) ->
     openssl_suite_start(kex_str(Kex), Cipher) 
-        ++ openssl_cipher_name(Kex, string:to_upper(atom_to_list(Cipher)));
+        ++ openxssl_cipher_name(Kex, string:to_upper(atom_to_list(Cipher)));
 suite_map_to_openssl_str(#{key_exchange := Kex,
                        cipher := Cipher,
                        mac := aead,
                        prf := PRF}) ->
     openssl_suite_start(kex_str(Kex), Cipher) 
-        ++  openssl_cipher_name(Kex, string:to_upper(atom_to_list(Cipher))) ++
+        ++  openxssl_cipher_name(Kex, string:to_upper(atom_to_list(Cipher))) ++
         prf_str("-", PRF);
 suite_map_to_openssl_str(#{key_exchange := Kex,
                            cipher := Cipher,
                            mac := Mac}) ->
     openssl_suite_start(kex_str(Kex), Cipher) 
-        ++  openssl_cipher_name(Kex, string:to_upper(atom_to_list(Cipher))) ++
+        ++  openxssl_cipher_name(Kex, string:to_upper(atom_to_list(Cipher))) ++
         "-" ++ string:to_upper(atom_to_list(Mac)).
 
 
@@ -1880,14 +1880,14 @@ algo_str_to_atom("SRP") ->
 algo_str_to_atom(AlgoStr) ->
     erlang:list_to_existing_atom(string:to_lower(AlgoStr)).
 
-openssl_cipher_name(Kex, "3DES_EDE_CBC" ++ _) when Kex == ecdhe_psk;
+openxssl_cipher_name(Kex, "3DES_EDE_CBC" ++ _) when Kex == ecdhe_psk;
                                                    Kex == srp_anon;
                                                    Kex == psk;
                                                    Kex == dhe_psk ->
     "3DES-EDE-CBC";
-openssl_cipher_name(_, "3DES_EDE_CBC" ++ _) ->
+openxssl_cipher_name(_, "3DES_EDE_CBC" ++ _) ->
     "DES-CBC3";
-openssl_cipher_name(Kex, "AES_128_CBC" ++ _ = CipherStr) when Kex == rsa;
+openxssl_cipher_name(Kex, "AES_128_CBC" ++ _ = CipherStr) when Kex == rsa;
                                                               Kex == dhe_rsa;
                                                               Kex == dhe_dss;
                                                               Kex == ecdh_rsa;
@@ -1897,7 +1897,7 @@ openssl_cipher_name(Kex, "AES_128_CBC" ++ _ = CipherStr) when Kex == rsa;
                                                               Kex == ecdh_anon;
                                                               Kex == dh_anon ->
     openssl_name_concat(CipherStr);
-openssl_cipher_name(Kex, "AES_256_CBC" ++ _ = CipherStr) when Kex == rsa;
+openxssl_cipher_name(Kex, "AES_256_CBC" ++ _ = CipherStr) when Kex == rsa;
                                                               Kex == dhe_rsa;
                                                               Kex == dhe_dss;
                                                               Kex == ecdh_rsa;
@@ -1907,35 +1907,35 @@ openssl_cipher_name(Kex, "AES_256_CBC" ++ _ = CipherStr) when Kex == rsa;
                                                               Kex == ecdh_anon; 
                                                               Kex == dh_anon ->
     openssl_name_concat(CipherStr);
-openssl_cipher_name(Kex, "AES_128_CBC" ++ _ = CipherStr) when Kex == srp_anon;
+openxssl_cipher_name(Kex, "AES_128_CBC" ++ _ = CipherStr) when Kex == srp_anon;
                                                               Kex == srp_rsa ->
     lists:append(string:replace(CipherStr, "_", "-", all));
-openssl_cipher_name(Kex, "AES_256_CBC" ++ _ = CipherStr) when Kex == srp_anon;
+openxssl_cipher_name(Kex, "AES_256_CBC" ++ _ = CipherStr) when Kex == srp_anon;
                                                               Kex == srp_rsa ->
     lists:append(string:replace(CipherStr, "_", "-", all));
-openssl_cipher_name(_, "AES_128_CBC" ++ _ = CipherStr) ->
+openxssl_cipher_name(_, "AES_128_CBC" ++ _ = CipherStr) ->
     openssl_name_concat(CipherStr)  ++ "-CBC";
-openssl_cipher_name(_, "AES_256_CBC" ++ _ = CipherStr) ->
+openxssl_cipher_name(_, "AES_256_CBC" ++ _ = CipherStr) ->
     openssl_name_concat(CipherStr)  ++ "-CBC";
-openssl_cipher_name(_, "AES_128_GCM_8") ->
+openxssl_cipher_name(_, "AES_128_GCM_8") ->
     openssl_name_concat("AES_128_GCM") ++ "-GCM8";
-openssl_cipher_name(_, "AES_256_GCM_8") ->
+openxssl_cipher_name(_, "AES_256_GCM_8") ->
     openssl_name_concat("AES_256_GCM") ++ "-GCM8";
-openssl_cipher_name(_, "AES_128_CCM_8") ->
+openxssl_cipher_name(_, "AES_128_CCM_8") ->
     openssl_name_concat("AES_128_CCM") ++ "-CCM8";
-openssl_cipher_name(_, "AES_256_CCM_8") ->
+openxssl_cipher_name(_, "AES_256_CCM_8") ->
     openssl_name_concat("AES_256_CCM") ++ "-CCM8";
-openssl_cipher_name(_, "AES_128_GCM" ++ _ = CipherStr) ->
+openxssl_cipher_name(_, "AES_128_GCM" ++ _ = CipherStr) ->
     openssl_name_concat(CipherStr) ++ "-GCM";
-openssl_cipher_name(_, "AES_256_GCM" ++ _ = CipherStr) ->
+openxssl_cipher_name(_, "AES_256_GCM" ++ _ = CipherStr) ->
     openssl_name_concat(CipherStr) ++ "-GCM";
-openssl_cipher_name(_, "AES_128_CCM" ++ _ = CipherStr) ->
+openxssl_cipher_name(_, "AES_128_CCM" ++ _ = CipherStr) ->
     openssl_name_concat(CipherStr) ++ "-CCM";
-openssl_cipher_name(_, "AES_256_CCM" ++ _ = CipherStr) ->
+openxssl_cipher_name(_, "AES_256_CCM" ++ _ = CipherStr) ->
     openssl_name_concat(CipherStr) ++ "-CCM";
-openssl_cipher_name(_, "RC4" ++ _) ->
+openxssl_cipher_name(_, "RC4" ++ _) ->
     "RC4";
-openssl_cipher_name(_, CipherStr) ->
+openxssl_cipher_name(_, CipherStr) ->
     lists:append(string:replace(CipherStr, "_", "-", all)).
 
 openssl_suite_start(Kex, Cipher) ->
@@ -2011,7 +2011,7 @@ openssl_name_concat(Str0) ->
 suite_openssl_str_to_map(Kex0, Rest) ->
     Kex = algo_str_to_atom(kex_name_from_openssl(Kex0)),
     [Part1, Part2] = string:split(Rest, "-", trailing),
-    {Cipher, Mac, Prf} = openssl_cipher_str_to_algs(Kex, Part1, Part2),
+    {Cipher, Mac, Prf} = openxssl_cipher_str_to_algs(Kex, Part1, Part2),
     #{key_exchange => Kex,
       mac => Mac,
       cipher => Cipher,
@@ -2019,22 +2019,22 @@ suite_openssl_str_to_map(Kex0, Rest) ->
      }.
 
 %% Does only need own implementation PRE TLS 1.3 
-openssl_cipher_str_to_algs(_, Part1, "CCM" = End) -> 
+openxssl_cipher_str_to_algs(_, Part1, "CCM" = End) -> 
     Cipher = algo_str_to_atom(cipher_name_from_openssl(Part1 ++ "_" ++ End)),
     {Cipher, aead, default_prf};
-openssl_cipher_str_to_algs(_, Part1, "GCM" = End) -> 
+openxssl_cipher_str_to_algs(_, Part1, "GCM" = End) -> 
     Cipher = algo_str_to_atom(cipher_name_from_openssl(Part1 ++ "_" ++ End)),
     {Cipher, aead, default_prf};
-openssl_cipher_str_to_algs(_, Part2, "CCM8") -> 
+openxssl_cipher_str_to_algs(_, Part2, "CCM8") -> 
     Cipher = algo_str_to_atom(cipher_name_from_openssl(Part2 ++ "-CCM-8")),
     {Cipher, aead, default_prf};
-openssl_cipher_str_to_algs(_, Part2, "GCM8") -> 
+openxssl_cipher_str_to_algs(_, Part2, "GCM8") -> 
     Cipher = algo_str_to_atom(cipher_name_from_openssl(Part2 ++ "-GCM-8")),
     {Cipher, aead, default_prf};
-openssl_cipher_str_to_algs(_, "CHACHA20", "POLY1305") -> 
+openxssl_cipher_str_to_algs(_, "CHACHA20", "POLY1305") -> 
     Cipher = chacha20_poly1305,
     {Cipher, aead, sha256};
-openssl_cipher_str_to_algs(Kex, Part1, Part2) ->
+openxssl_cipher_str_to_algs(Kex, Part1, Part2) ->
     Hash = algo_str_to_atom(Part2),
     Cipher = algo_str_to_atom(cipher_name_from_openssl(string:strip(Part1, left, $-))),
     case openssl_is_aead_cipher(Part1) of

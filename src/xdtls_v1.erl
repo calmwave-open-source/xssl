@@ -47,13 +47,13 @@ all_suites(Version) ->
     lists:filter(fun(Cipher) -> 
                          is_acceptable_cipher(xssl_cipher_format:suite_bin_to_map(Cipher)) 
                  end,
-                 ssl_cipher:all_suites(corresponding_tls_version(Version))).
+                 xssl_cipher:all_suites(corresponding_tls_version(Version))).
 
 anonymous_suites(Version) ->
     lists:filter(fun(Cipher) -> 
                          is_acceptable_cipher(xssl_cipher_format:suite_bin_to_map(Cipher)) 
                  end, 
-                 ssl_cipher:anonymous_suites(corresponding_tls_version(Version))).
+                 xssl_cipher:anonymous_suites(corresponding_tls_version(Version))).
 
 exclusive_suites(Version) ->
     lists:filter(fun(Cipher) ->
@@ -90,4 +90,4 @@ corresponding_dtls_version(?TLS_1_2) ->
     ?DTLS_1_2.
 
 is_acceptable_cipher(Suite) ->
-    not ssl_cipher:is_stream_ciphersuite(Suite).
+    not xssl_cipher:is_stream_ciphersuite(Suite).

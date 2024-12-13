@@ -84,20 +84,20 @@ format(#{alert := Alert, alerter := own} = Report) ->
       role := Role,
       alert := Alert,
       statename := StateName } = Report,
-    ssl_alert:own_alert_format(ProtocolName, Role, StateName, Alert);
+    xssl_alert:own_alert_format(ProtocolName, Role, StateName, Alert);
 format(#{alert := Alert, alerter := peer} = Report) ->
     #{protocol := ProtocolName,
       role := Role,
       alert := Alert,
       statename := StateName } = Report,
-    ssl_alert:alert_format(ProtocolName, Role, StateName, Alert);
+    xssl_alert:alert_format(ProtocolName, Role, StateName, Alert);
 format(#{alert := Alert, alerter := ignored} = Report) -> 
     #{protocol := ProtocolName,
       role := Role,
       alert := Alert,
       statename := StateName} = Report,
     %% Happens in DTLS
-    {Fmt, Args} = ssl_alert:own_alert_format(ProtocolName, Role, StateName, Alert),
+    {Fmt, Args} = xssl_alert:own_alert_format(ProtocolName, Role, StateName, Alert),
     {"~s " ++ Fmt, ["Ignored alert to mitigate DoS attacks", Args]};
 format(#{description := Desc, reason := Reason, file := Mod, line := Line}) ->
     {"~12s ~p~n"

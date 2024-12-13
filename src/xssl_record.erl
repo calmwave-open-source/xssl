@@ -313,7 +313,7 @@ cipher(Version, Fragment,
 	} = WriteState0, MacHash) ->
     %%
     {CipherFragment, CipherS1} =
-	ssl_cipher:cipher(BulkCipherAlgo, CipherS0, MacHash, Fragment, Version),
+	xssl_cipher:cipher(BulkCipherAlgo, CipherS0, MacHash, Fragment, Version),
     {CipherFragment,  WriteState0#{cipher_state => CipherS1}}.
 
 %%--------------------------------------------------------------------
@@ -325,7 +325,7 @@ cipher(Version, Fragment,
 cipher(Version, Fragment, CipherS0, MacHash,
        #security_parameters{bulk_cipher_algorithm = BulkCipherAlgo}) ->
     %%
-    ssl_cipher:cipher(BulkCipherAlgo, CipherS0, MacHash, Fragment, Version).
+    xssl_cipher:cipher(BulkCipherAlgo, CipherS0, MacHash, Fragment, Version).
 
 %%--------------------------------------------------------------------
 -spec cipher_aead(ssl_version(), iodata(), connection_state(), AAD::binary()) ->
@@ -366,7 +366,7 @@ decipher(Version, CipherFragment,
 				    hash_size = HashSz},
 	   cipher_state := CipherS0
 	  } = ReadState, PaddingCheck) ->
-    case ssl_cipher:decipher(BulkCipherAlgo, HashSz, CipherS0, CipherFragment, Version, PaddingCheck) of
+    case xssl_cipher:decipher(BulkCipherAlgo, HashSz, CipherS0, CipherFragment, Version, PaddingCheck) of
 	{PlainFragment, Mac, CipherS1} ->
 	    CS1 = ReadState#{cipher_state => CipherS1},
 	    {PlainFragment, Mac, CS1};
@@ -374,7 +374,7 @@ decipher(Version, CipherFragment,
 	    Alert
     end.
 %%--------------------------------------------------------------------
--spec decipher_aead(ssl_cipher:cipher_enum(),  #cipher_state{}, binary(), binary(), ssl_record:ssl_version()) ->
+-spec decipher_aead(xssl_cipher:cipher_enum(),  #cipher_state{}, binary(), binary(), xssl_record:ssl_version()) ->
 			   binary() | #alert{}.
 %%
 %% Description: Decrypts the data and checks the associated data (AAD) MAC using
@@ -385,7 +385,7 @@ decipher_aead(Type, #cipher_state{key = Key} = CipherState, AAD0, CipherFragment
     try
         Nonce = decrypt_nonce(Type, CipherState, CipherFragment),
         {AAD, CipherText, CipherTag} = aead_ciphertext_split(Type, CipherState, CipherFragment, AAD0),
-        case ssl_cipher:aead_decrypt(Type, Key, Nonce, CipherText, CipherTag, AAD) of
+        case xssl_cipher:aead_decrypt(Type, Key, Nonce, CipherText, CipherTag, AAD) of
 	    Content when is_binary(Content) ->
 		Content;
 	    Reason ->
@@ -400,7 +400,7 @@ decipher_aead(Type, #cipher_state{key = Key} = CipherState, AAD0, CipherFragment
     end.
 
 nonce_seed(?CHACHA20_POLY1305, Seed, CipherState) ->
-    ssl_cipher:nonce_seed(Seed, CipherState);
+    xssl_cipher:nonce_seed(Seed, CipherState);
 nonce_seed(_,_, CipherState) ->
     CipherState.
 
@@ -434,11 +434,11 @@ init_security_parameters(?SERVER, Version) ->
                          server_random = make_random(Version)}.
 
 make_random(Version) when ?TLS_GTE(Version, ?TLS_1_3) ->
-    ssl_cipher:random_bytes(32);
+    xssl_cipher:random_bytes(32);
 make_random(_Version) ->
     Secs_since_1970 = calendar:datetime_to_gregorian_seconds(
 			calendar:universal_time()) - 62167219200,
-    Random_28_bytes = ssl_cipher:random_bytes(28),
+    Random_28_bytes = xssl_cipher:random_bytes(28),
     <<?UINT32(Secs_since_1970), Random_28_bytes/binary>>.
 
 -compile({inline, [is_correct_mac/2]}).
@@ -455,19 +455,19 @@ record_protocol_role(server) ->
 
 initial_security_params(ConnectionEnd) ->
     SecParams = #security_parameters{connection_end = ConnectionEnd},
-    ssl_cipher:security_parameters(?TLS_NULL_WITH_NULL_NULL, SecParams).
+    xssl_cipher:security_parameters(?TLS_NULL_WITH_NULL_NULL, SecParams).
 
 -define(end_additional_data(AAD, Len), << (begin(AAD)end)/binary, ?UINT16(begin(Len)end) >>).
 
 do_cipher_aead(?CHACHA20_POLY1305 = Type, Fragment, #cipher_state{key=Key, tag_len = TagLen} = CipherState, AAD0) ->
     AAD = ?end_additional_data(AAD0, erlang:iolist_size(Fragment)),
     Nonce = chacha_nonce(CipherState),
-    {Content, CipherTag} = ssl_cipher:aead_encrypt(Type, Key, Nonce, Fragment, AAD, TagLen),
+    {Content, CipherTag} = xssl_cipher:aead_encrypt(Type, Key, Nonce, Fragment, AAD, TagLen),
     {<<Content/binary, CipherTag/binary>>, CipherState};
 do_cipher_aead(Type, Fragment, #cipher_state{key=Key, tag_len = TagLen, nonce = ExplicitNonce} = CipherState, AAD0) ->
     AAD = ?end_additional_data(AAD0, erlang:iolist_size(Fragment)),
     Nonce = encrypt_nonce(Type, CipherState),
-    {Content, CipherTag} = ssl_cipher:aead_encrypt(Type, Key, Nonce, Fragment, AAD, TagLen),
+    {Content, CipherTag} = xssl_cipher:aead_encrypt(Type, Key, Nonce, Fragment, AAD, TagLen),
     {<<ExplicitNonce:64/integer, Content/binary, CipherTag/binary>>, CipherState#cipher_state{nonce = ExplicitNonce + 1}}.
 
 

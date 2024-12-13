@@ -171,7 +171,7 @@ update_connection_state(Pid, NewState, Version) ->
     gen_statem:cast(Pid, {new_write, NewState, Version}).
 
 %%--------------------------------------------------------------------
--spec downgrade(pid(), integer()) -> {ok, ssl_record:connection_state()}
+-spec downgrade(pid(), integer()) -> {ok, xssl_record:connection_state()}
                                          | {error, timeout}.
 %% Description: So TLS connection process can synchronize the 
 %% encryption state to be used when sending application data. 

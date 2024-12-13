@@ -685,12 +685,12 @@ is_supported_signature_algorithm_1_2(#'OTPCertificate'{signatureAlgorithm =
                                      SignAlgs) ->
     is_supported_signature_algorithm_1_3(Cert, SignAlgs);
 is_supported_signature_algorithm_1_2(#'OTPCertificate'{signatureAlgorithm = SignAlg}, SignAlgs) ->
-    Scheme = ssl_cipher:signature_algorithm_to_scheme(SignAlg),
-    {Hash, Sign, _ } = ssl_cipher:scheme_to_components(Scheme),
-    ssl_cipher:is_supported_sign({Hash, pre_1_3_sign(Sign)}, ssl_cipher:signature_schemes_1_2(SignAlgs)).
+    Scheme = xssl_cipher:signature_algorithm_to_scheme(SignAlg),
+    {Hash, Sign, _ } = xssl_cipher:scheme_to_components(Scheme),
+    xssl_cipher:is_supported_sign({Hash, pre_1_3_sign(Sign)}, xssl_cipher:signature_schemes_1_2(SignAlgs)).
 is_supported_signature_algorithm_1_3(#'OTPCertificate'{signatureAlgorithm = SignAlg}, SignAlgs) ->
-    Scheme = ssl_cipher:signature_algorithm_to_scheme(SignAlg),
-    ssl_cipher:is_supported_sign(Scheme, SignAlgs).
+    Scheme = xssl_cipher:signature_algorithm_to_scheme(SignAlg),
+    xssl_cipher:is_supported_sign(Scheme, SignAlgs).
 
 pre_1_3_sign(rsa_pkcs1) ->
     rsa;

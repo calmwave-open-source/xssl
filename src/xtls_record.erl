@@ -57,7 +57,7 @@
 
 -export_type([tls_version/0, tls_atom_version/0]).
 
--type tls_version()       :: ssl_record:ssl_version().
+-type tls_version()       :: xssl_record:ssl_version().
 -type tls_atom_version()  :: sslv3 | tlsv1 | 'tlsv1.1' | 'tlsv1.2' | 'tlsv1.3'.
 -type xtls_max_frag_len()  :: undefined | 512 | 1024 | 2048 | 4096.
 
@@ -68,7 +68,7 @@
 %%====================================================================
 %%--------------------------------------------------------------------
 -spec init_connection_states(Role, Version, BeastMitigation) ->
-          ssl_record:connection_states() when
+          xssl_record:connection_states() when
       Role :: client | server,
       Version :: tls_version(),
       BeastMitigation :: one_n_minus_one | zero_n | disabled.
@@ -83,16 +83,16 @@ init_connection_states(Role, Version, BeastMitigation) ->
 %%
 -spec init_connection_states(Role, Version, BeastMitigation,
                              MaxEarlyDataSize) ->
-          ssl_record:connection_states() when
+          xssl_record:connection_states() when
       Role :: client | server,
       Version :: tls_version(),
       BeastMitigation :: one_n_minus_one | zero_n | disabled,
       MaxEarlyDataSize :: non_neg_integer().
 
 init_connection_states(Role, Version, BeastMitigation, MaxEarlyDataSize) ->
-    ConnectionEnd = ssl_record:record_protocol_role(Role),
+    ConnectionEnd = xssl_record:record_protocol_role(Role),
     Current = initial_connection_state(ConnectionEnd, MaxEarlyDataSize),
-    Pending = ssl_record:empty_connection_state(ConnectionEnd, Version, MaxEarlyDataSize),
+    Pending = xssl_record:empty_connection_state(ConnectionEnd, Version, MaxEarlyDataSize),
     CS = #{current_read  => Current,  pending_read  => Pending,
            current_write => Current,  pending_write => Pending},
     case BeastMitigation of
@@ -125,8 +125,8 @@ get_tls_records(Data, Versions, {Hdr, {Front,Size,Rear}}, MaxFragLen, Downgrade)
 %%====================================================================
 
 %%--------------------------------------------------------------------
--spec encode_handshake(iolist(), tls_version(), ssl_record:connection_states()) ->
-			      {iolist(), ssl_record:connection_states()}.
+-spec encode_handshake(iolist(), tls_version(), xssl_record:connection_states()) ->
+			      {iolist(), xssl_record:connection_states()}.
 %
 %% Description: Encodes a handshake message to send on the ssl-socket.
 %%--------------------------------------------------------------------
@@ -147,8 +147,8 @@ encode_handshake(Frag, Version,
     end.
 
 %%--------------------------------------------------------------------
--spec encode_alert_record(#alert{}, tls_version(), ssl_record:connection_states()) ->
-				 {iolist(), ssl_record:connection_states()}.
+-spec encode_alert_record(#alert{}, tls_version(), xssl_record:connection_states()) ->
+				 {iolist(), xssl_record:connection_states()}.
 %%
 %% Description: Encodes an alert message to send on the ssl-socket.
 %%--------------------------------------------------------------------
@@ -160,8 +160,8 @@ encode_alert_record(#alert{level = Level, description = Description},
 		      ConnectionStates).
 
 %%--------------------------------------------------------------------
--spec encode_change_cipher_spec(tls_version(), ssl_record:connection_states()) ->
-				       {iolist(), ssl_record:connection_states()}.
+-spec encode_change_cipher_spec(tls_version(), xssl_record:connection_states()) ->
+				       {iolist(), xssl_record:connection_states()}.
 %%
 %% Description: Encodes a change_cipher_spec-message to send on the ssl socket.
 %%--------------------------------------------------------------------
@@ -169,8 +169,8 @@ encode_change_cipher_spec(Version, ConnectionStates) ->
     encode_plain_text(?CHANGE_CIPHER_SPEC, Version, ?byte(?CHANGE_CIPHER_SPEC_PROTO), ConnectionStates).
 
 %%--------------------------------------------------------------------
--spec encode_data([binary()], tls_version(), ssl_record:connection_states()) ->
-			 {[[binary()]], ssl_record:connection_states()}.
+-spec encode_data([binary()], tls_version(), xssl_record:connection_states()) ->
+			 {[[binary()]], xssl_record:connection_states()}.
 %%
 %% Description: Encodes data to send on the ssl-socket.
 %%--------------------------------------------------------------------
@@ -190,9 +190,9 @@ encode_data(Data, Version,
 %%====================================================================
 
 %%--------------------------------------------------------------------
--spec decode_cipher_text(tls_version(), #ssl_tls{}, ssl_record:connection_states(), boolean()) ->
+-spec decode_cipher_text(tls_version(), #ssl_tls{}, xssl_record:connection_states(), boolean()) ->
 				{#ssl_tls{} | no_record,
-                                 ssl_record:connection_states()}| #alert{}.
+                                 xssl_record:connection_states()}| #alert{}.
 %%
 %% Description: Decode cipher text
 %%--------------------------------------------------------------------
@@ -211,8 +211,8 @@ decode_cipher_text(_, CipherTextRecord,
     #ssl_tls{type = Type, version = Version, fragment = Fragment} = CipherTextRecord,
     {MajVer,MinVer} = Version,
     StartAdditionalData = <<SeqBin/binary, ?BYTE(Type), ?BYTE(MajVer), ?BYTE(MinVer)>>,
-    CipherS = ssl_record:nonce_seed(BulkCipherAlgo, SeqBin, CipherS0),
-    case ssl_record:decipher_aead(
+    CipherS = xssl_record:nonce_seed(BulkCipherAlgo, SeqBin, CipherS0),
+    case xssl_record:decipher_aead(
            BulkCipherAlgo, CipherS, StartAdditionalData, Fragment, Version)
     of
 	PlainFragment when is_binary(PlainFragment) ->
@@ -228,11 +228,11 @@ decode_cipher_text(_, CipherTextRecord,
 decode_cipher_text(_, #ssl_tls{version = Version,
                                fragment = CipherFragment} = CipherTextRecord,
 		   #{current_read := ReadState0} = ConnnectionStates0, PaddingCheck) ->
-    case ssl_record:decipher(Version, CipherFragment, ReadState0, PaddingCheck) of
+    case xssl_record:decipher(Version, CipherFragment, ReadState0, PaddingCheck) of
 	{PlainFragment, Mac, ReadState1} ->
-	    MacHash = ssl_cipher:calc_mac_hash(CipherTextRecord#ssl_tls.type, Version,
+	    MacHash = xssl_cipher:calc_mac_hash(CipherTextRecord#ssl_tls.type, Version,
                                                PlainFragment, ReadState1),
-	    case ssl_record:is_correct_mac(Mac, MacHash) of
+	    case xssl_record:is_correct_mac(Mac, MacHash) of
 		true ->
                     #{sequence_number := Seq} = ReadState0,
 		    ConnnectionStates =
@@ -453,7 +453,7 @@ split_iovec(Data, MaximumFragmentLength) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 initial_connection_state(ConnectionEnd, MaxEarlyDataSize) ->
-    #{security_parameters => ssl_record:initial_security_params(ConnectionEnd),
+    #{security_parameters => xssl_record:initial_security_params(ConnectionEnd),
       sequence_number => 0,
       cipher_state  => undefined,
       mac_secret  => undefined,
@@ -651,11 +651,11 @@ encode_fragments(Type, Version, [Text|Data],
                                                   bulk_cipher_algorithm = BCAlg} = SecPars}} = CS,
                  CipherS0, Seq, CipherFragments) ->
     SeqBin = <<?UINT64(Seq)>>,
-    CipherS1 = ssl_record:nonce_seed(BCAlg, SeqBin, CipherS0),
+    CipherS1 = xssl_record:nonce_seed(BCAlg, SeqBin, CipherS0),
     {MajVer, MinVer} = Version,
     VersionBin = <<?BYTE(MajVer), ?BYTE(MinVer)>>,
     StartAdditionalData = <<SeqBin/binary, ?BYTE(Type), VersionBin/binary>>,
-    {CipherFragment,CipherS} = ssl_record:cipher_aead(Version, Text, CipherS1,
+    {CipherFragment,CipherS} = xssl_record:cipher_aead(Version, Text, CipherS1,
                                                       StartAdditionalData, SecPars),
     Length = byte_size(CipherFragment),
     CipherHeader = <<?BYTE(Type), VersionBin/binary, ?UINT16(Length)>>,
@@ -667,8 +667,8 @@ encode_fragments(Type, Version, [Text|Data],
                              #security_parameters{mac_algorithm = MacAlgorithm} = SecPars,
                          mac_secret := MacSecret}} = CS,
                  CipherS0, Seq, CipherFragments) ->
-    MacHash = ssl_cipher:calc_mac_hash(Type, Version, Text, MacAlgorithm, MacSecret, Seq),
-    {CipherFragment,CipherS} = ssl_record:cipher(Version, Text, CipherS0, MacHash, SecPars),
+    MacHash = xssl_cipher:calc_mac_hash(Type, Version, Text, MacAlgorithm, MacSecret, Seq),
+    {CipherFragment,CipherS} = xssl_record:cipher(Version, Text, CipherS0, MacHash, SecPars),
     Length = byte_size(CipherFragment),
     {MajVer, MinVer} = Version,
     CipherHeader = <<?BYTE(Type), ?BYTE(MajVer), ?BYTE(MinVer), ?UINT16(Length)>>,

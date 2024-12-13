@@ -240,7 +240,7 @@ select_sni_extension(_) ->
     undefined.
 
 empty_connection_state(ConnectionEnd) ->
-    ssl_record:empty_connection_state(ConnectionEnd).
+    xssl_record:empty_connection_state(ConnectionEnd).
 
 %%====================================================================
 %% Data handling
@@ -492,8 +492,8 @@ handle_protocol_record(#ssl_tls{type = _Unknown}, StateName, State) ->
 %%====================================================================	     
 
 %%--------------------------------------------------------------------
--spec encode_alert(#alert{}, ssl_record:ssl_version(), ssl_record:connection_states()) -> 
-		    {iolist(), ssl_record:connection_states()}.
+-spec encode_alert(#alert{}, xssl_record:ssl_version(), xssl_record:connection_states()) -> 
+		    {iolist(), xssl_record:connection_states()}.
 %%
 %% Description: Encodes an alert
 %%--------------------------------------------------------------------
@@ -888,7 +888,7 @@ assert_buffer_sanity(Bin, _) ->
     end.  
 
 decode_alerts(Bin) ->
-    ssl_alert:decode(Bin).
+    xssl_alert:decode(Bin).
 
 handle_alerts([], Result) ->
     Result;

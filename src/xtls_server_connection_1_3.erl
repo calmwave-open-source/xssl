@@ -315,7 +315,7 @@ wait_finished(internal,
         ExporterSecret = xtls_handshake_1_3:calculate_exporter_master_secret(State2),
         State3 = xtls_handshake_1_3:forget_master_secret(State2),
         %% Configure traffic keys
-        State4 = ssl_record:step_encryption_state(State3),
+        State4 = xssl_record:step_encryption_state(State3),
 
         State5 = maybe_send_session_ticket(State4),
 
@@ -344,7 +344,7 @@ wait_eoed(internal = Type, #change_cipher_spec{} = Msg, State) ->
     xtls_gen_connection_1_3:handle_change_cipher_spec(Type, Msg, wait_eoed, State);
 wait_eoed(internal, #end_of_early_data{}, #state{handshake_env = HsEnv0} = State0) ->
     try
-        State = ssl_record:step_encryption_state_read(State0),
+        State = xssl_record:step_encryption_state_read(State0),
         HsEnv = HsEnv0#handshake_env{early_data_accepted = false},
         xtls_gen_connection:next_event(wait_finished, no_record, State#state{handshake_env = HsEnv})
     catch
@@ -456,12 +456,12 @@ do_handle_client_hello(#client_hello{cipher_suites = ClientCiphers,
         {Group, ClientPubKey} = select_client_public_key(Groups, ClientShares),
 
         %% Generate server_share
-        KeyShare = ssl_cipher:generate_server_share(Group),
+        KeyShare = xssl_cipher:generate_server_share(Group),
 
         State2 = case maps:get(max_frag_enum, Extensions, undefined) of
                       MaxFragEnum when is_record(MaxFragEnum, max_frag_enum) ->
                          ConnectionStates1 =
-                             ssl_record:set_max_fragment_length(MaxFragEnum, ConnectionStates0),
+                             xssl_record:set_max_fragment_length(MaxFragEnum, ConnectionStates0),
                          HsEnv1 = (State1#state.handshake_env)#handshake_env{max_frag_enum =
                                                                                  MaxFragEnum},
                          State1#state{handshake_env = HsEnv1,
@@ -528,7 +528,7 @@ send_hello_flight({start_handshake, PSK0},
     ServerPrivateKey = select_server_private_key(KeyShare),
 
     #{security_parameters := SecParamsR} =
-        ssl_record:pending_connection_state(ConnectionStates0, read),
+        xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{prf_algorithm = HKDF} = SecParamsR,
 
     {Ref,Maybe} = xtls_gen_connection_1_3:do_maybe(),
@@ -550,12 +550,12 @@ send_hello_flight({start_handshake, PSK0},
         State4 =
             case EarlyDataAccepted of
                 true ->
-                    ssl_record:step_encryption_state_write(State3);
+                    xssl_record:step_encryption_state_write(State3);
                 false ->
                     %% Read state is overwritten when handshake secrets are set.
                     %% Trial_decryption and early_data_accepted must be set here!
                     update_current_read(
-                      ssl_record:step_encryption_state(State3),
+                      xssl_record:step_encryption_state(State3),
                       true,   %% trial_decryption
                       false   %% early_data_accepted
                     )
@@ -606,7 +606,7 @@ validate_cookie(#cookie{cookie = Cookie0}, #state{ssl_options = #{cookie := true
                                                         tls_handshake_history =
                                                              {[_CH2,_HRR,MessageHash|_], _},
                                                          cookie_iv_shard = {IV, Shard}}}) ->
-    Cookie = ssl_cipher:decrypt_data(<<"cookie">>, Cookie0, Shard, IV),
+    Cookie = xssl_cipher:decrypt_data(<<"cookie">>, Cookie0, Shard, IV),
     case Cookie =:= iolist_to_binary(MessageHash) of
         true ->
             ok;
@@ -642,7 +642,7 @@ session_resumption({#state{ssl_options = #{session_tickets := Tickets},
     {Index, PSK, PeerCert} = PSKInfo,
     State2 = xtls_handshake_1_3:calculate_client_early_traffic_secret(State1, PSK),
     %% Set 0-RTT traffic keys for reading early_data
-    State3 = ssl_record:step_encryption_state_read(State2),
+    State3 = xssl_record:step_encryption_state_read(State2),
     State4 = maybe_store_peer_cert(State3, PeerCert),
     State = update_current_read(State4, true, true),
     {ok, {State, negotiated, {Index, PSK}}}.
@@ -673,7 +673,7 @@ maybe_send_session_ticket(#state{connection_states = ConnectionStates,
                                 } = State0, N) ->
     Tracker = proplists:get_value(session_tickets_tracker, Trackers),
     #{security_parameters := SecParamsR} =
-        ssl_record:current_connection_state(ConnectionStates, read),
+        xssl_record:current_connection_state(ConnectionStates, read),
     #security_parameters{prf_algorithm = HKDF,
                          resumption_master_secret = RMS} = SecParamsR,
     Ticket = new_session_ticket(Tracker, HKDF, RMS, State0),
@@ -805,7 +805,7 @@ send_hello_retry_request(State0, _, _, _) ->
     {ok, {State0, negotiated}}.
 
 update_current_read(#state{connection_states = CS} = State, TrialDecryption, EarlyDataExpected) ->
-    #{early_data := EarlyData0} = Read0 = ssl_record:current_connection_state(CS, read),
+    #{early_data := EarlyData0} = Read0 = xssl_record:current_connection_state(CS, read),
     EarlyData = EarlyData0#{trial_decryption => TrialDecryption,
                             early_data_accepted => EarlyDataExpected},
     Read = Read0#{early_data := EarlyData},

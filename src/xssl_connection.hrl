@@ -58,7 +58,7 @@
 
 
 -record(handshake_env, {
-                        client_hello_version  :: ssl_record:ssl_version() | 'undefined', %% Legacy client hello
+                        client_hello_version  :: xssl_record:ssl_version() | 'undefined', %% Legacy client hello
                         unprocessed_handshake_events = 0    :: integer(),
                         tls_handshake_history :: ssl_handshake:ssl_handshake_history() | term()
                                                | 'undefined',
@@ -112,7 +112,7 @@
                           downgrade             :: {NewController::pid(), From::gen_statem:from()} | 'undefined',
                           socket_terminated = false                          ::boolean(),
                           socket_tls_closed = false                          ::boolean() | #alert{},
-                          negotiated_version    :: ssl_record:ssl_version() | 'undefined',
+                          negotiated_version    :: xssl_record:ssl_version() | 'undefined',
                           erl_dist_handle = undefined :: erlang:dist_handle() | 'undefined',
                           cert_key_alts  = undefined ::  #{eddsa => list(),
                                                            ecdsa => list(),
@@ -140,7 +140,7 @@
                 session               :: #session{} | xssl_gen_statem:secret_printout(),
                 %% Data shuffling %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 recv = #recv{}        :: #recv{},
-                connection_states     :: ssl_record:connection_states() | xssl_gen_statem:secret_printout(),
+                connection_states     :: xssl_record:connection_states() | xssl_gen_statem:secret_printout(),
                 %% #protocol_buffers{} from xtls_record.hrl or xdtls_recor.hrl
                 protocol_buffers      :: term() | xssl_gen_statem:secret_printout(),
                 user_data_buffer     :: undefined | {[binary()],non_neg_integer(),[binary()]} | xssl_gen_statem:secret_printout()

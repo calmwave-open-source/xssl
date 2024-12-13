@@ -24,8 +24,8 @@
 %% the SSL-cipher protocol see RFC 4346, RFC 3268
 %%----------------------------------------------------------------------
 
--ifndef(ssl_cipher).
--define(ssl_cipher, true).
+-ifndef(xssl_cipher).
+-define(xssl_cipher, true).
 
 %%% Session tickets  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 -record(stateless_ticket,
@@ -718,4 +718,4 @@
 %% %%  TLS_AES_128_CCM_8_SHA256    = {0x13,0x05}
 -define(TLS_AES_128_CCM_8_SHA256, <<?BYTE(16#13),?BYTE(16#05)>>).
 
--endif. % -ifdef(ssl_cipher).
+-endif. % -ifdef(xssl_cipher).

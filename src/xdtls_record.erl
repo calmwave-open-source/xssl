@@ -66,20 +66,20 @@
 %%====================================================================
 %%--------------------------------------------------------------------
 -spec init_connection_states(client | server, one_n_minus_one | zero_n | disabled) ->
- 				    ssl_record:connection_states().
+ 				    xssl_record:connection_states().
 %% %
 						%
 %% Description: Creates a connection_states record with appropriate
 %% values for the initial SSL connection setup.
 %%--------------------------------------------------------------------
 init_connection_states(Role, BeastMitigation) ->
-    ConnectionEnd = ssl_record:record_protocol_role(Role),
+    ConnectionEnd = xssl_record:record_protocol_role(Role),
     Initial = initial_connection_state(ConnectionEnd),
     Current = Initial#{epoch := 0},
-    %% No need to pass Version to ssl_record:empty_connection_state since
+    %% No need to pass Version to xssl_record:empty_connection_state since
     %% random nonce is generated with same algorithm for DTLS version
     %% Might require a change for DTLS-1.3
-    InitialPending = ssl_record:empty_connection_state(ConnectionEnd),
+    InitialPending = xssl_record:empty_connection_state(ConnectionEnd),
     Pending = empty_connection_state(InitialPending),
     CS = #{saved_read  => Current, current_read  => Current,
            pending_read  => Pending, saved_write => Current,
@@ -94,7 +94,7 @@ empty_connection_state(Empty) ->
 
 %%--------------------------------------------------------------------
 -spec save_current_connection_state(xssl_record:connection_states(), read | write) ->
-				      ssl_record:connection_states().
+				      xssl_record:connection_states().
 %%
 %% Description: Returns the instance of the connection_state map
 %% where the current read|write state has been copied to the save state.
@@ -142,8 +142,8 @@ set_connection_state_by_epoch(ReadState, Epoch, #{saved_read := #{epoch := Epoch
     States#{saved_read := ReadState}.
 
 %%--------------------------------------------------------------------
--spec init_connection_state_seq(xssl_record:ssl_version(), ssl_record:connection_states()) ->
-          ssl_record:connection_state().
+-spec init_connection_state_seq(xssl_record:ssl_version(), xssl_record:connection_states()) ->
+          xssl_record:connection_state().
 %%
 %% Description: Copy the read sequence number to the write sequence number
 %% This is only valid for DTLS in the first client_hello
@@ -170,7 +170,7 @@ current_connection_state_epoch(#{current_write := #{epoch := Epoch}},
     Epoch.
 
 %%--------------------------------------------------------------------
--spec get_dtls_records(binary(), {atom(), atom(), ssl_record:ssl_version(), [ssl_record:ssl_version()]}, binary(),
+-spec get_dtls_records(binary(), {atom(), atom(), xssl_record:ssl_version(), [xssl_record:ssl_version()]}, binary(),
                        ssl_options()) -> {[binary()], binary()} | #alert{}.
 %%
 %% Description: Given old buffer and new data from UDP/SCTP, packs up a records
@@ -186,8 +186,8 @@ get_dtls_records(Data, Vinfo, Buffer, #{log_level := LogLevel}) ->
 %%====================================================================
 
 %%--------------------------------------------------------------------
--spec encode_handshake(iolist(), ssl_record:ssl_version(), integer(), ssl_record:connection_states()) ->
-			      {iolist(), ssl_record:connection_states()}.
+-spec encode_handshake(iolist(), xssl_record:ssl_version(), integer(), xssl_record:connection_states()) ->
+			      {iolist(), xssl_record:connection_states()}.
 %
 %% Description: Encodes a handshake message to send on the ssl-socket.
 %%--------------------------------------------------------------------
@@ -196,20 +196,20 @@ encode_handshake(Frag, Version, Epoch, ConnectionStates) ->
 
 
 %%--------------------------------------------------------------------
--spec encode_alert_record(#alert{}, ssl_record:ssl_version(), ssl_record:connection_states()) ->
-				 {iolist(), ssl_record:connection_states()}.
+-spec encode_alert_record(#alert{}, xssl_record:ssl_version(), xssl_record:connection_states()) ->
+				 {iolist(), xssl_record:connection_states()}.
 %%
 %% Description: Encodes an alert message to send on the ssl-socket.
 %%--------------------------------------------------------------------
 encode_alert_record(#alert{level = Level, description = Description},
                     Version, ConnectionStates) ->
-    #{epoch := Epoch} = ssl_record:current_connection_state(ConnectionStates, write),
+    #{epoch := Epoch} = xssl_record:current_connection_state(ConnectionStates, write),
     encode_plain_text(?ALERT, Version, Epoch, <<?BYTE(Level), ?BYTE(Description)>>,
 		      ConnectionStates).
 
 %%--------------------------------------------------------------------
--spec encode_change_cipher_spec(xssl_record:ssl_version(), integer(), ssl_record:connection_states()) ->
-          {[iolist()], ssl_record:connection_states()}.
+-spec encode_change_cipher_spec(xssl_record:ssl_version(), integer(), xssl_record:connection_states()) ->
+          {[iolist()], xssl_record:connection_states()}.
 %%
 %% Description: Encodes a change_cipher_spec-message to send on the ssl socket.
 %%--------------------------------------------------------------------
@@ -218,13 +218,13 @@ encode_change_cipher_spec(Version, Epoch, ConnectionStates) ->
     {[Enc], Cs}.
 
 %%--------------------------------------------------------------------
--spec encode_data(binary(), ssl_record:ssl_version(), ssl_record:connection_states()) ->
-          {[iolist()],ssl_record:connection_states()}.
+-spec encode_data(binary(), xssl_record:ssl_version(), xssl_record:connection_states()) ->
+          {[iolist()],xssl_record:connection_states()}.
 %%
 %% Description: Encodes data to send on the ssl-socket.
 %%--------------------------------------------------------------------
 encode_data(Data, Version, ConnectionStates) ->
-    #{epoch := Epoch} = ssl_record:current_connection_state(ConnectionStates, write),
+    #{epoch := Epoch} = xssl_record:current_connection_state(ConnectionStates, write),
     MaxLength = maps:get(max_fragment_length, ConnectionStates, ?MAX_PLAIN_TEXT_LENGTH),
     case iolist_size(Data) of
 	N when N > MaxLength ->
@@ -262,7 +262,7 @@ decode_cipher_text(#ssl_tls{epoch = Epoch} = CipherText, ConnnectionStates0) ->
 
 
 %%--------------------------------------------------------------------
--spec protocol_version_name(dtls_atom_version()) -> ssl_record:ssl_version().
+-spec protocol_version_name(dtls_atom_version()) -> xssl_record:ssl_version().
 %%
 %% Description: Creates a protocol version record from a version atom
 %% or vice versa.
@@ -286,7 +286,7 @@ protocol_version(?DTLS_1_2) ->
 protocol_version(?DTLS_1_0) ->
     dtlsv1.
 %%--------------------------------------------------------------------
--spec lowest_protocol_version(xssl_record:ssl_version(), ssl_record:ssl_version()) -> ssl_record:ssl_version().
+-spec lowest_protocol_version(xssl_record:ssl_version(), xssl_record:ssl_version()) -> xssl_record:ssl_version().
 %%
 %% Description: Lowes protocol version of two given versions
 %%--------------------------------------------------------------------
@@ -296,7 +296,7 @@ lowest_protocol_version(_, Version2) ->
     Version2.
 
 %%--------------------------------------------------------------------
--spec lowest_protocol_version([ssl_record:ssl_version()]) -> ssl_record:ssl_version().
+-spec lowest_protocol_version([xssl_record:ssl_version()]) -> xssl_record:ssl_version().
 %%     
 %% Description: Lowest protocol version present in a list
 %%--------------------------------------------------------------------
@@ -304,7 +304,7 @@ lowest_protocol_version(Versions) ->
     check_protocol_version(Versions, fun lowest_protocol_version/2).
 
 %%--------------------------------------------------------------------
--spec highest_protocol_version([ssl_record:ssl_version()]) -> ssl_record:ssl_version().
+-spec highest_protocol_version([xssl_record:ssl_version()]) -> xssl_record:ssl_version().
 %%
 %% Description: Highest protocol version present in a list
 %%--------------------------------------------------------------------
@@ -316,7 +316,7 @@ check_protocol_version([], Fun) -> check_protocol_version(supported_protocol_ver
 check_protocol_version([Ver | Versions], Fun) -> lists:foldl(Fun, Ver, Versions).
 
 %%--------------------------------------------------------------------
--spec highest_protocol_version(xssl_record:ssl_version(), ssl_record:ssl_version()) -> ssl_record:ssl_version().
+-spec highest_protocol_version(xssl_record:ssl_version(), xssl_record:ssl_version()) -> xssl_record:ssl_version().
 %%
 %% Description: Highest protocol version of two given versions
 %%--------------------------------------------------------------------
@@ -327,7 +327,7 @@ highest_protocol_version(_, Version2) ->
     Version2.
 
 %%--------------------------------------------------------------------
--spec is_higher(V1 :: ssl_record:ssl_version(), V2::ssl_record:ssl_version()) -> boolean().
+-spec is_higher(V1 :: xssl_record:ssl_version(), V2::xssl_record:ssl_version()) -> boolean().
 %%
 %% Description: Is V1 > V2
 %%--------------------------------------------------------------------
@@ -338,7 +338,7 @@ is_higher(_, _) ->
 
 
 %%--------------------------------------------------------------------
--spec supported_protocol_versions() -> [ssl_record:ssl_version()].
+-spec supported_protocol_versions() -> [xssl_record:ssl_version()].
 %%
 %% Description: Protocol versions supported
 %%--------------------------------------------------------------------
@@ -381,7 +381,7 @@ supported_protocol_versions([_|_] = Vsns) ->
     end.
 
 %%--------------------------------------------------------------------
--spec is_acceptable_version(xssl_record:ssl_version(), Supported :: [ssl_record:ssl_version()]) -> boolean().
+-spec is_acceptable_version(xssl_record:ssl_version(), Supported :: [xssl_record:ssl_version()]) -> boolean().
 %%
 %% Description: ssl version 2 is not acceptable security risks are too big.
 %%
@@ -389,7 +389,7 @@ supported_protocol_versions([_|_] = Vsns) ->
 is_acceptable_version(Version, Versions) ->
     lists:member(Version, Versions).
 
--spec hello_version(xssl_record:ssl_version(), [ssl_record:ssl_version()]) -> ssl_record:ssl_version().
+-spec hello_version(xssl_record:ssl_version(), [xssl_record:ssl_version()]) -> xssl_record:ssl_version().
 hello_version(Version, Versions) ->
     case xdtls_v1:corresponding_tls_version(Version) of
         TLSVersion when ?TLS_GTE(TLSVersion, ?TLS_1_2) ->
@@ -403,7 +403,7 @@ hello_version(Version, Versions) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 initial_connection_state(ConnectionEnd) ->
-    #{security_parameters => ssl_record:initial_security_params(ConnectionEnd),
+    #{security_parameters => xssl_record:initial_security_params(ConnectionEnd),
       epoch => undefined,
       sequence_number => 0,
       replay_window => init_replay_window(),
@@ -539,10 +539,10 @@ encode_plain_text(Type, Version, Data, #{cipher_state := CipherS0,
                                                 bulk_cipher_algorithm = BCAlg}
 					} = WriteState0) ->
     AAD = start_additional_data(Type, Version, Epoch, Seq),
-    CipherS = ssl_record:nonce_seed(BCAlg, <<?UINT16(Epoch), ?UINT48(Seq)>>, CipherS0),
+    CipherS = xssl_record:nonce_seed(BCAlg, <<?UINT16(Epoch), ?UINT48(Seq)>>, CipherS0),
     WriteState = WriteState0#{cipher_state => CipherS},
     TLSVersion = xdtls_v1:corresponding_tls_version(Version),
-    ssl_record:cipher_aead(TLSVersion, Data, WriteState, AAD);
+    xssl_record:cipher_aead(TLSVersion, Data, WriteState, AAD);
 encode_plain_text(Type, Version, Fragment, #{epoch := Epoch,
                                              sequence_number := Seq,
                                              cipher_state := CipherS0,
@@ -552,7 +552,7 @@ encode_plain_text(Type, Version, Fragment, #{epoch := Epoch,
                                             }= WriteState) ->
     MAC = calc_mac_hash(Type, Version, WriteState, Epoch, Seq, Fragment),
     TLSVersion = xdtls_v1:corresponding_tls_version(Version),
-    {CipherFrag, CipherS1} = ssl_cipher:cipher(BulkCipherAlgo, CipherS0, MAC, Fragment, TLSVersion),
+    {CipherFrag, CipherS1} = xssl_cipher:cipher(BulkCipherAlgo, CipherS0, MAC, Fragment, TLSVersion),
     {CipherFrag,  WriteState#{cipher_state => CipherS1}}.
 
 %%--------------------------------------------------------------------
@@ -568,9 +568,9 @@ decode_cipher_text(#ssl_tls{type = Type, version = Version,
                            }} = ReadState0,
 		   ConnnectionStates0) ->
     AAD = start_additional_data(Type, Version, Epoch, Seq),
-    CipherS = ssl_record:nonce_seed(BulkCipherAlgo, <<?UINT16(Epoch), ?UINT48(Seq)>>, CipherS0),
+    CipherS = xssl_record:nonce_seed(BulkCipherAlgo, <<?UINT16(Epoch), ?UINT48(Seq)>>, CipherS0),
     TLSVersion = xdtls_v1:corresponding_tls_version(Version),
-    case ssl_record:decipher_aead(BulkCipherAlgo, CipherS, AAD, CipherFragment, TLSVersion) of
+    case xssl_record:decipher_aead(BulkCipherAlgo, CipherS, AAD, CipherFragment, TLSVersion) of
 	PlainFragment when is_binary(PlainFragment) ->
 	    ReadState1 = ReadState0#{cipher_state := CipherS},
             ReadState = update_replay_window(Seq, ReadState1),
@@ -585,10 +585,10 @@ decode_cipher_text(#ssl_tls{type = Type, version = Version,
 			    fragment = CipherFragment} = CipherText,
 		   ReadState0,
 		   ConnnectionStates0) ->
-    {PlainFragment, Mac, ReadState1} = ssl_record:decipher(dtls_v1:corresponding_tls_version(Version),
+    {PlainFragment, Mac, ReadState1} = xssl_record:decipher(dtls_v1:corresponding_tls_version(Version),
 							   CipherFragment, ReadState0, true),
     MacHash = calc_mac_hash(Type, Version, ReadState1, Epoch, Seq, PlainFragment),
-    case ssl_record:is_correct_mac(Mac, MacHash) of
+    case xssl_record:is_correct_mac(Mac, MacHash) of
 	true ->
             ReadState = update_replay_window(Seq, ReadState1),
 	    ConnnectionStates = set_connection_state_by_epoch(ReadState, Epoch, ConnnectionStates0, read),

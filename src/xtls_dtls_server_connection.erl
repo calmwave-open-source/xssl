@@ -102,13 +102,13 @@ abbreviated(internal, #finished{verify_data = Data} = Finished,
 		   connection_states = ConnectionStates0} =
 		State0) ->
     #{security_parameters := SecParams} =
-        ssl_record:current_connection_state(ConnectionStates0, write),
+        xssl_record:current_connection_state(ConnectionStates0, write),
     case ssl_handshake:verify_connection(xssl:tls_version(Version), Finished, client,
                                          SecParams#security_parameters.prf_algorithm,
 					 MasterSecret, Hist) of
         verified ->
 	    ConnectionStates =
-		ssl_record:set_client_verify_data(current_both, Data, ConnectionStates0),
+		xssl_record:set_client_verify_data(current_both, Data, ConnectionStates0),
 	    {Record, State} =
                 xssl_gen_statem:prepare_connection(
                   State0#state{connection_states = ConnectionStates,
@@ -277,14 +277,14 @@ cipher(internal, #finished{verify_data = Data} = Finished,
               ssl_options = SslOpts,
 	      connection_states = ConnectionStates0} = State0) ->
     #{security_parameters := SecParams} =
-        ssl_record:current_connection_state(ConnectionStates0, read),
+        xssl_record:current_connection_state(ConnectionStates0, read),
     case ssl_handshake:verify_connection(xssl:tls_version(Version), Finished,
 					 xssl_gen_statem:opposite_role(Role),
 					 SecParams#security_parameters.prf_algorithm,
 					 MasterSecret, Hist) of
         verified ->
 	    Session = maybe_register_session(SslOpts, Host, Port, Trackers, Session0),
-            ConnectionStates1 = ssl_record:set_client_verify_data(current_read, Data,
+            ConnectionStates1 = xssl_record:set_client_verify_data(current_read, Data,
                                                                   ConnectionStates0),
             {State1, Actions} =
                 xtls_dtls_gen_connection:finalize_handshake(State0#state{connection_states =
@@ -497,7 +497,7 @@ key_exchange(#state{handshake_env = #handshake_env{kex_algorithm = KexAlg,
        KexAlg == dh_anon ->
     DHKeys = public_key:generate_key(Params),
     #{security_parameters := SecParams} =
-	ssl_record:pending_connection_state(ConnectionStates0, read),
+	xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
     Msg = ssl_handshake:key_exchange(server, xssl:tls_version(Version), {dh, DHKeys, Params,
@@ -524,7 +524,7 @@ key_exchange(#state{handshake_env = #handshake_env{kex_algorithm = KexAlg,
     assert_curve(ECCCurve),
     ECDHKeys = public_key:generate_key(ECCCurve),
     #{security_parameters := SecParams} =
-	ssl_record:pending_connection_state(ConnectionStates0, read),
+	xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
     Msg =  ssl_handshake:key_exchange(server, xssl:tls_version(Version),
@@ -544,7 +544,7 @@ key_exchange(#state{ssl_options = #{psk_identity := PskIdentityHint},
                     session = #session{private_key = PrivateKey},
                     connection_states = ConnectionStates0} = State0, Connection) ->
     #{security_parameters := SecParams} =
-	ssl_record:pending_connection_state(ConnectionStates0, read),
+	xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
     Msg = ssl_handshake:key_exchange(server, xssl:tls_version(Version),
@@ -564,7 +564,7 @@ key_exchange(#state{ssl_options = #{psk_identity := PskIdentityHint},
 		   } = State0, Connection) ->
     DHKeys = public_key:generate_key(Params),
     #{security_parameters := SecParams} =
-	ssl_record:pending_connection_state(ConnectionStates0, read),
+	xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
     Msg =  ssl_handshake:key_exchange(server, xssl:tls_version(Version),
@@ -585,7 +585,7 @@ key_exchange(#state{ssl_options = #{psk_identity := PskIdentityHint},
     assert_curve(ECCCurve),
     ECDHKeys = public_key:generate_key(ECCCurve),
     #{security_parameters := SecParams} =
-	ssl_record:pending_connection_state(ConnectionStates0, read),
+	xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
     Msg =  ssl_handshake:key_exchange(server, xssl:tls_version(Version),
@@ -607,7 +607,7 @@ key_exchange(#state{ssl_options = #{psk_identity := PskIdentityHint},
 		    connection_states = ConnectionStates0
 		   } = State0, Connection) ->
     #{security_parameters := SecParams} =
-	ssl_record:pending_connection_state(ConnectionStates0, read),
+	xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
     Msg =  ssl_handshake:key_exchange(server, xssl:tls_version(Version),
@@ -629,7 +629,7 @@ key_exchange(#state{ssl_options = #{user_lookup_fun := LookupFun},
     SrpParams = handle_srp_identity(Username, LookupFun),
     Keys = generate_srp_server_keys(SrpParams, 0),
     #{security_parameters := SecParams} =
-	ssl_record:pending_connection_state(ConnectionStates0, read),
+	xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
     Msg =  ssl_handshake:key_exchange(server, xssl:tls_version(Version),

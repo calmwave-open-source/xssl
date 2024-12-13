@@ -343,7 +343,7 @@ generate_stateless_ticket(#new_session_ticket{ticket_nonce = Nonce,
                          #state{stateless = #{seed := {IV, Shard}}}) ->
     PSK = xtls_v1:pre_shared_key(MasterSecret, Nonce, Prf),
     Timestamp = erlang:system_time(second),
-    Encrypted = ssl_cipher:encrypt_ticket(#stateless_ticket{
+    Encrypted = xssl_cipher:encrypt_ticket(#stateless_ticket{
                                              hash = Prf,
                                              pre_shared_key = PSK,
                                              ticket_age_add = TicketAgeAdd,
@@ -366,7 +366,7 @@ stateless_use([#psk_identity{identity = Encrypted,
               [Binder | Binders], Prf, HandshakeHist, Index, 
               #state{stateless = #{seed := {IV, Shard},
                                    window := Window}} = State) ->
-    case ssl_cipher:decrypt_ticket(Encrypted, Shard, IV) of
+    case xssl_cipher:decrypt_ticket(Encrypted, Shard, IV) of
         #stateless_ticket{hash = Prf,
                           pre_shared_key = PSK,
                           certificate = PeerCert} = Ticket ->

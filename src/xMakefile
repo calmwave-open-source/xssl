@@ -62,10 +62,10 @@ MODULES= \
 	inet6_tls_dist \
 	ssl \
 	ssl_admin_sup \
-	ssl_alert \
+	xssl_alert \
 	ssl_app \
 	xssl_certificate \
-	ssl_cipher \
+	xssl_cipher \
 	xssl_cipher_format \
 	ssl_client_session_cache_db \
 	ssl_config \
@@ -84,7 +84,7 @@ MODULES= \
 	xssl_manager \
 	xssl_pem_cache \
 	xssl_pkix_db \
-	ssl_record \
+	xssl_record \
 	ssl_server_session_cache \
 	ssl_server_session_cache_db \
 	ssl_server_session_cache_sup \
@@ -124,13 +124,13 @@ INTERNAL_HRL_FILES = \
 	dtls_connection.hrl \
 	dtls_handshake.hrl \
 	dtls_record.hrl \
-	ssl_alert.hrl \
+	xssl_alert.hrl \
 	ssl_api.hrl \
-	ssl_cipher.hrl \
+	xssl_cipher.hrl \
 	ssl_connection.hrl \
 	ssl_handshake.hrl \
 	ssl_internal.hrl \
-	ssl_record.hrl \
+	xssl_record.hrl \
 	ssl_srp.hrl \
 	tls_connection.hrl \
 	tls_handshake.hrl \

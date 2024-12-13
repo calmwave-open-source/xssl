@@ -54,7 +54,7 @@
 %% Handshake handling
 %%====================================================================
 %%--------------------------------------------------------------------
--spec client_hello(xssl:host(), inet:port_number(), ssl_record:connection_states(),
+-spec client_hello(xssl:host(), inet:port_number(), xssl_record:connection_states(),
 		   ssl_options(), binary(), boolean(),
                    #key_share_client_hello{} | undefined, tuple() | undefined,
                    binary() | undefined, xssl_manager:db_handle() |
@@ -83,7 +83,7 @@ client_hello(_Host, _Port, ConnectionStates,
                 Version
         end,
     #{security_parameters := SecParams} =
-        ssl_record:pending_connection_state(ConnectionStates, read),
+        xssl_record:pending_connection_state(ConnectionStates, read),
     AvailableCipherSuites = ssl_handshake:available_suites(UserSuites, Version),
     Extensions = ssl_handshake:client_hello_extensions(Version,
 						       AvailableCipherSuites,
@@ -103,12 +103,12 @@ client_hello(_Host, _Port, ConnectionStates,
 
 %%--------------------------------------------------------------------
 -spec hello(#server_hello{}, ssl_options(),
-	    ssl_record:connection_states() | {inet:port_number(), #session{}, xssl_manager:db_handle(),
-				    atom(), ssl_record:connection_states(), 
+	    xssl_record:connection_states() | {inet:port_number(), #session{}, xssl_manager:db_handle(),
+				    atom(), xssl_record:connection_states(), 
 				    binary() | undefined, xssl:kex_algo()},
 	    boolean(), #session{}) ->
           {tls_record:tls_version(), xssl:session_id(), 
-           ssl_record:connection_states(), alpn | npn, binary() | undefined, map()}|
+           xssl_record:connection_states(), alpn | npn, binary() | undefined, map()}|
           {atom(), atom(), xtls_record:tls_version(), map()}.
                                                 % Otherwise Throws #alert{}
 %%
@@ -214,13 +214,13 @@ hello(#server_hello{server_version = Version,
 
 %%--------------------------------------------------------------------
 -spec hello(#client_hello{}, ssl_options(),
-	    {pid(), #session{}, ssl_record:connection_states(),
+	    {pid(), #session{}, xssl_record:connection_states(),
              list(), xssl:kex_algo()},
 	    boolean()) ->
 		   {tls_record:tls_version(), xssl:session_id(), 
-		    ssl_record:connection_states(), alpn | npn, binary() | undefined}|
+		    xssl_record:connection_states(), alpn | npn, binary() | undefined}|
 		   {tls_record:tls_version(), {resumed | new, #session{}}, 
-		    ssl_record:connection_states(), binary() | undefined, 
+		    xssl_record:connection_states(), binary() | undefined, 
                     HelloExt::map(), {xssl:hash(), xssl:sign_algo()} | 
                     undefined} | {atom(), atom()} | {atom(), atom(), tuple()}.
 %% TLS 1.2 Server
@@ -294,7 +294,7 @@ encode_handshake(Package, Version) ->
                         ssl_options()) ->
      {[{xtls_handshake(), binary()}], binary()}.
 %%
-%% Description: Given buffered and new data from ssl_record, collects
+%% Description: Given buffered and new data from xssl_record, collects
 %% and returns it as a list of handshake messages, also returns leftover
 %% data.
 %%--------------------------------------------------------------------
@@ -405,7 +405,7 @@ handle_server_hello_extensions(Version, SessionId, Random, CipherSuite,
 do_hello(undefined, _Versions, _CipherSuites, _Hello, _SslOpts, _Info, _Renegotiation) ->
     throw(?ALERT_REC(?FATAL, ?PROTOCOL_VERSION));
 do_hello(Version, Versions, CipherSuites, Hello, SslOpts, Info, Renegotiation) ->
-    case ssl_cipher:is_fallback(CipherSuites) of
+    case xssl_cipher:is_fallback(CipherSuites) of
         true ->
             Highest = xtls_record:highest_protocol_version(Versions),
             case xtls_record:is_higher(Highest, Version) of
@@ -492,7 +492,7 @@ get_signature_ext(Ext, HelloExt, ?TLS_1_2) ->
         %% Can happen when connection is upgraded and sni_fun changes
         %% the versions option from default
         #signature_algorithms{signature_scheme_list = Schemes} ->
-            #hash_sign_algos{hash_sign_algos = ssl_cipher:signature_schemes_1_2(Schemes)};
+            #hash_sign_algos{hash_sign_algos = xssl_cipher:signature_schemes_1_2(Schemes)};
         #signature_algorithms_cert{} = Algos ->
             Algos;
         #hash_sign_algos{} = Algos ->

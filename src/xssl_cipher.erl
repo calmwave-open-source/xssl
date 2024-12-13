@@ -148,7 +148,7 @@ nonce_seed(Seed, CipherState) ->
     CipherState#cipher_state{nonce = Seed}.
 
 %%--------------------------------------------------------------------
--spec cipher(cipher_enum(), #cipher_state{}, binary(), iodata(), ssl_record:ssl_version()) ->
+-spec cipher(cipher_enum(), #cipher_state{}, binary(), iodata(), xssl_record:ssl_version()) ->
 		    {binary(), #cipher_state{}}. 
 %%
 %% Description: Encrypts the data and the MAC using cipher described
@@ -236,7 +236,7 @@ block_cipher(Fun, BlockSz, #cipher_state{key=Key, iv=IV, state = IV_Cache0} = CS
 
 %%--------------------------------------------------------------------
 -spec decipher(cipher_enum(), integer(), #cipher_state{}, binary(), 
-	       ssl_record:ssl_version(), boolean()) ->
+	       xssl_record:ssl_version(), boolean()) ->
 		      {binary(), binary(), #cipher_state{}} | #alert{}.
 %%
 %% Description: Decrypts the data and the MAC using cipher described
@@ -363,7 +363,7 @@ versions_included(?TLS_1_3) -> [?TLS_1_3].
 
 %%--------------------------------------------------------------------
 -spec filter(undefined | binary(), [xssl_cipher_format:cipher_suite()],
-             ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
+             xssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 %%
 %% Description: Select the cipher suites that can be used together with the 
 %% supplied certificate. (Server side functionality)  
@@ -638,7 +638,7 @@ signature_scheme(?ECDSA_SHA1) -> ecdsa_sha1;
 signature_scheme(SignAlgo) when is_integer(SignAlgo) ->
     <<?BYTE(Hash),?BYTE(Sign)>> = <<?UINT16(SignAlgo)>>,
     try
-        {ssl_cipher:hash_algorithm(Hash), ssl_cipher:sign_algorithm(Sign)}
+        {xssl_cipher:hash_algorithm(Hash), xssl_cipher:sign_algorithm(Sign)}
     catch
         _:_ ->
             unassigned
@@ -1241,7 +1241,7 @@ encrypt_ticket(#stateless_ticket{
                   timestamp = Timestamp,
                   certificate = Certificate
                  }, Shard, IV) ->
-    Plaintext1 = <<(ssl_cipher:hash_algorithm(Hash)):8,PSK/binary,
+    Plaintext1 = <<(xssl_cipher:hash_algorithm(Hash)):8,PSK/binary,
                    ?UINT64(TicketAgeAdd),?UINT32(Lifetime),?UINT32(Timestamp)>>,
     CertificateLength = case Certificate of
                             undefined -> 0;

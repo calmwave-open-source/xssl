@@ -107,7 +107,7 @@
 derive_secret(Secret, Label, Messages, Algo) ->
     Hash = crypto:hash(mac_algo(Algo), Messages),
     hkdf_expand_label(Secret, Label,
-                      Hash, ssl_cipher:hash_size(Algo), Algo).
+                      Hash, xssl_cipher:hash_size(Algo), Algo).
 
 -spec hkdf_expand_label(Secret::binary(), Label0::binary(),
                         Context::binary(), Length::integer(),
@@ -143,7 +143,7 @@ hkdf_extract(MacAlg, Salt, KeyingMaterial) ->
                   Length::integer(), Algo::xssl:hash()) -> KeyingMaterial::binary().
 
 hkdf_expand(PseudoRandKey, ContextInfo, Length, Algo) ->
-    Iterations = erlang:ceil(Length / ssl_cipher:hash_size(Algo)),
+    Iterations = erlang:ceil(Length / xssl_cipher:hash_size(Algo)),
     hkdf_expand(Algo, PseudoRandKey, ContextInfo, Length, 1, Iterations, <<>>, <<>>).
 
 
@@ -167,7 +167,7 @@ master_secret(PrfAlgo, PreMasterSecret, ClientRandom, ServerRandom) ->
 
 -spec finished(Role, Version, PrfAlgo, MasterSecret, Handshake) -> binary() when
       Role :: client | server,
-      Version :: ssl_record:ssl_version(),
+      Version :: xssl_record:ssl_version(),
       PrfAlgo :: integer(),
       MasterSecret :: binary(),
       Handshake    :: [binary()].
@@ -356,11 +356,11 @@ setup_keys(?TLS_1_2, PrfAlgo, MasterSecret, ServerRandom, ClientRandom, HashSize
                           {early_secret | handshake_secret | master_secret, binary()}.
 
 key_schedule(early_secret, Algo, {psk, PSK}) ->
-    Len = ssl_cipher:hash_size(Algo),
+    Len = xssl_cipher:hash_size(Algo),
     Salt = binary:copy(<<?BYTE(0)>>, Len),
     {early_secret, hkdf_extract(Algo, Salt, PSK)};
 key_schedule(master_secret, Algo, {handshake_secret, Secret}) ->
-    Len = ssl_cipher:hash_size(Algo),
+    Len = xssl_cipher:hash_size(Algo),
     IKM = binary:copy(<<?BYTE(0)>>, Len),
     Salt = derive_secret(Secret, <<"derived">>, <<>>, Algo),
     {master_secret, hkdf_extract(Algo, Salt, IKM)}.
@@ -421,8 +421,8 @@ resumption_master_secret(Algo, {master_secret, Secret}, M) ->
 finished_key(BaseKey, Algo) ->
     %% finished_key =
     %%        HKDF-Expand-Label(BaseKey, "finished", "", Hash.length)
-    ssl_cipher:hash_size(Algo),
-    hkdf_expand_label(BaseKey, <<"finished">>, <<>>, ssl_cipher:hash_size(Algo), Algo).
+    xssl_cipher:hash_size(Algo),
+    hkdf_expand_label(BaseKey, <<"finished">>, <<>>, xssl_cipher:hash_size(Algo), Algo).
 
 -spec finished_verify_data(binary(), atom(), iodata()) -> binary().
 finished_verify_data(FinishedKey, HKDFAlgo, Messages) ->
@@ -442,8 +442,8 @@ pre_shared_key(RMS, Nonce, Algo) ->
     %%
     %%     HKDF-Expand-Label(resumption_master_secret,
     %%                      "resumption", ticket_nonce, Hash.length)
-    ssl_cipher:hash_size(Algo),
-    hkdf_expand_label(RMS, <<"resumption">>, Nonce, ssl_cipher:hash_size(Algo), Algo).
+    xssl_cipher:hash_size(Algo),
+    hkdf_expand_label(RMS, <<"resumption">>, Nonce, xssl_cipher:hash_size(Algo), Algo).
 
 %% The next-generation application_traffic_secret is computed as:
 %%
@@ -452,7 +452,7 @@ pre_shared_key(RMS, Nonce, Algo) ->
 %%                              "traffic upd", "", Hash.length)
 -spec update_traffic_secret(atom(), binary()) -> binary().
 update_traffic_secret(Algo, Secret) ->
-    hkdf_expand_label(Secret, <<"traffic upd">>, <<>>, ssl_cipher:hash_size(Algo), Algo).
+    hkdf_expand_label(Secret, <<"traffic upd">>, <<>>, xssl_cipher:hash_size(Algo), Algo).
 
 %% The traffic keying material is generated from the following input
 %%    values:
@@ -480,7 +480,7 @@ calculate_traffic_keys(HKDFAlgo, KeyLength, Secret) ->
       KeyLength :: 0 | 8 | 16 | 24 | 32.
 key_length(CipherSuite) ->
     #{cipher := Cipher} = xssl_cipher_format:suite_bin_to_map(CipherSuite),
-    ssl_cipher:key_material(Cipher).
+    xssl_cipher:key_material(Cipher).
 
 %% TLS v1.3  ---------------------------------------------------
 
@@ -802,7 +802,7 @@ srp_exclusive_anon(?TLS_1_0) ->
     ].
 
 %%--------------------------------------------------------------------
--spec rc4_suites(Version::ssl_record:ssl_version()) ->
+-spec rc4_suites(Version::xssl_record:ssl_version()) ->
           [xssl_cipher_format:cipher_suite()].
 %%
 %% Description: Returns a list of the RSA|(ECDH/RSA)| (ECDH/ECDSA)
@@ -813,7 +813,7 @@ srp_exclusive_anon(?TLS_1_0) ->
 rc4_suites(Version) when ?TLS_1_X(Version) ->
     rc4_exclusive(?TLS_1_0).
 
--spec rc4_exclusive(Version::ssl_record:ssl_version()) ->
+-spec rc4_exclusive(Version::xssl_record:ssl_version()) ->
           [xssl_cipher_format:cipher_suite()].
 
 rc4_exclusive(?TLS_1_0) ->
@@ -827,7 +827,7 @@ rc4_exclusive(_) ->
     [].
 
 %%--------------------------------------------------------------------
--spec des_suites(Version::ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
+-spec des_suites(Version::xssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 %%
 %% Description: Returns a list of the cipher suites
 %% with DES cipher, only supported if explicitly set by user.
@@ -848,7 +848,7 @@ des_exclusive(?TLS_1_0)->
 des_exclusive(_) ->
     [].
 %%--------------------------------------------------------------------
--spec rsa_suites(Version::ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
+-spec rsa_suites(Version::xssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 %%
 %% Description: Returns a list of the RSA key exchange
 %% cipher suites, only supported if explicitly set by user.
@@ -861,7 +861,7 @@ rsa_suites_in_version(?TLS_1_2) -> [?TLS_1_2, ?TLS_1_0];
 rsa_suites_in_version(?TLS_1_1) -> [?TLS_1_0];
 rsa_suites_in_version(?TLS_1_0) -> [?TLS_1_0].
 
--spec rsa_exclusive(Version::ssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
+-spec rsa_exclusive(Version::xssl_record:ssl_version()) -> [xssl_cipher_format:cipher_suite()].
 rsa_exclusive(?TLS_1_2) ->
     [
      ?TLS_RSA_WITH_AES_256_GCM_SHA384,
@@ -960,7 +960,7 @@ signature_schemes(Version, [_|_] =SignatureSchemes) when is_tuple(Version)
                                    proplists:get_value(rsa_opts, CryptoSupports)),
     Fun = fun (Scheme, Acc) when is_atom(Scheme) ->
                   {Hash, Sign0, Curve} =
-                      ssl_cipher:scheme_to_components(Scheme),
+                      xssl_cipher:scheme_to_components(Scheme),
                   Sign = case Sign0 of
                              rsa_pkcs1 ->
                                  rsa;

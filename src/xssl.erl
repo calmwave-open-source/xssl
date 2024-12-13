@@ -2905,12 +2905,12 @@ filter_cipher_suites(Suites, Filters0) ->
       cipher_filters := CipherF,
       mac_filters := MacF,
       prf_filters := PrfF}
-        = ssl_cipher:crypto_support_filters(),
+        = xssl_cipher:crypto_support_filters(),
     Filters = #{key_exchange_filters => add_filter(proplists:get_value(key_exchange, Filters0), KexF),
                 cipher_filters => add_filter(proplists:get_value(cipher, Filters0), CipherF),
                 mac_filters => add_filter(proplists:get_value(mac, Filters0), MacF),
                 prf_filters => add_filter(proplists:get_value(prf, Filters0), PrfF)},
-    ssl_cipher:filter_suites(Suites, Filters).
+    xssl_cipher:filter_suites(Suites, Filters).
 %%--------------------------------------------------------------------
 -doc """
 Make `Preferred` suites become the most preferred suites.
@@ -3707,11 +3707,11 @@ supported_suites(exclusive, Version) when ?TLS_1_X(Version) ->
 supported_suites(exclusive, Version) when ?DTLS_1_X(Version) ->
     xdtls_v1:exclusive_suites(Version);
 supported_suites(default, Version) ->  
-    ssl_cipher:suites(Version);
+    xssl_cipher:suites(Version);
 supported_suites(all, Version) ->  
-    ssl_cipher:all_suites(Version);
+    xssl_cipher:all_suites(Version);
 supported_suites(anonymous, Version) ->
-    ssl_cipher:anonymous_suites(Version);
+    xssl_cipher:anonymous_suites(Version);
 supported_suites(exclusive_anonymous, Version) when ?TLS_1_X(Version) ->
     xtls_v1:exclusive_anonymous_suites(Version);
 supported_suites(exclusive_anonymous, Version) when ?DTLS_1_X(Version) ->
@@ -4945,7 +4945,7 @@ validate_certs_or_anon_ciphers(CertsKeys, Ciphers, Versions) ->
 
 validate_anon_ciphers(Ciphers, Versions) ->
     MakeSet = fun(Version, Acc) ->
-                      Set = sets:from_list(ssl_cipher:anonymous_suites(Version)),
+                      Set = sets:from_list(xssl_cipher:anonymous_suites(Version)),
                       sets:union(Set, Acc)
               end,
     Anonymous = lists:foldl(MakeSet, sets:new(), Versions),
@@ -5030,19 +5030,19 @@ binary_cipher_suites(Versions, Ciphers0)  ->
     binary_cipher_suites(Versions, Ciphers).
 
 default_binary_suites(exclusive, Version) ->
-    ssl_cipher:filter_suites(tls_v1:exclusive_suites(Version));
+    xssl_cipher:filter_suites(tls_v1:exclusive_suites(Version));
 default_binary_suites(default, Version) ->
-    ssl_cipher:filter_suites(ssl_cipher:suites(Version)).
+    xssl_cipher:filter_suites(xssl_cipher:suites(Version)).
 
 all_suites([?TLS_1_3]) ->
     xtls_v1:exclusive_suites(?TLS_1_3);
 all_suites([?TLS_1_3, Version1 |_]) ->
     all_suites([?TLS_1_3]) ++
-        ssl_cipher:all_suites(Version1) ++
-        ssl_cipher:anonymous_suites(Version1);
+        xssl_cipher:all_suites(Version1) ++
+        xssl_cipher:anonymous_suites(Version1);
 all_suites([Version|_]) ->
-    ssl_cipher:all_suites(Version) ++
-        ssl_cipher:anonymous_suites(Version).
+    xssl_cipher:all_suites(Version) ++
+        xssl_cipher:anonymous_suites(Version).
 
 tuple_to_map({Kex, Cipher, Mac}) ->
     #{key_exchange => Kex,

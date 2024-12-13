@@ -153,14 +153,14 @@ hello_request() ->
     #hello_request{}.
 
 %%--------------------------------------------------------------------
-%%-spec server_hello(binary(), ssl_record:ssl_version(), ssl_record:connection_states(),
+%%-spec server_hello(binary(), xssl_record:ssl_version(), xssl_record:connection_states(),
 %%		   Extension::map()) -> #server_hello{}.
 %%
 %% Description: Creates a server hello message.
 %%--------------------------------------------------------------------
 server_hello(SessionId, Version, ConnectionStates, Extensions) ->
     #{security_parameters := SecParams} = 
-	ssl_record:pending_connection_state(ConnectionStates, read),
+	xssl_record:pending_connection_state(ConnectionStates, read),
     #server_hello{server_version = Version,
 		  cipher_suite = SecParams#security_parameters.cipher_suite,
 		  random = SecParams#security_parameters.server_random,
@@ -194,7 +194,7 @@ certificate([_, _ |_] = Chain, _, _, _) ->
 
 %%--------------------------------------------------------------------
 -spec client_certificate_verify([public_key:der_encoded()], binary(),
-				ssl_record:ssl_version(), term(), public_key:private_key(),
+				xssl_record:ssl_version(), term(), public_key:private_key(),
 				ssl_handshake_history()) ->
     #certificate_verify{} | ignore | #alert{}.
 %%
@@ -220,7 +220,7 @@ client_certificate_verify([OwnCert|_], MasterSecret, Version,
 %%--------------------------------------------------------------------
 -spec certificate_request(xssl_manager:db_handle(),
 			  xssl_manager:certdb_ref(),  #hash_sign_algos{}, 
-                          ssl_record:ssl_version(), boolean()) ->
+                          xssl_record:ssl_version(), boolean()) ->
           #certificate_request{}.
 %%
 %% Description: Creates a certificate_request message, called by the server.
@@ -239,7 +239,7 @@ certificate_request(CertDbHandle, CertDbRef, HashSigns, Version, IncludeCertAuth
        certificate_authorities = Authorities
       }.
 %%--------------------------------------------------------------------
--spec key_exchange(client | server, ssl_record:ssl_version(),
+-spec key_exchange(client | server, xssl_record:ssl_version(),
 		   {premaster_secret, binary(), public_key_info()} |
 		   {dh, binary()} |
 		   {dh, {binary(), binary()}, #'DHParameter'{}, {HashAlgo::atom(), SignAlgo::atom()},
@@ -386,7 +386,7 @@ next_protocol(SelectedProtocol) ->
 %%--------------------------------------------------------------------
 -spec certify([public_key:combined_cert()], xssl_manager:db_handle(), xssl_manager:certdb_ref(), ssl_options(), term(),
 	      client | server, inet:hostname() | inet:ip_address(),
-              ssl_record:ssl_version(), map()) ->  {#cert{}, public_key_info()} | #alert{}.
+              xssl_record:ssl_version(), map()) ->  {#cert{}, public_key_info()} | #alert{}.
 %%
 %% Description: Handles a certificate handshake message
 %%--------------------------------------------------------------------
@@ -412,7 +412,7 @@ certify(Certs, CertDbHandle, CertDbRef,
             ?ALERT_REC(?FATAL, ?INTERNAL_ERROR, {unexpected_error, OtherReason})
     end.
 %%--------------------------------------------------------------------
--spec certificate_verify(binary(), public_key_info(), ssl_record:ssl_version(), term(),
+-spec certificate_verify(binary(), public_key_info(), xssl_record:ssl_version(), term(),
 			 binary(), ssl_handshake_history()) -> valid | #alert{}.
 %%
 %% Description: Checks that the certificate_verify message is valid.
@@ -466,8 +466,8 @@ verify_signature(Version, Msg, {HashAlgo, dsa}, Signature, {?'id-dsa', PublicKey
     public_key:verify(Msg, HashAlgo, Signature, {PublicKey, PublicKeyParams}).
 
 %%--------------------------------------------------------------------
--spec master_secret(xssl_record:ssl_version(), #session{} | binary(), ssl_record:connection_states(),
-		   client | server) -> {binary(), ssl_record:connection_states()} | #alert{}.
+-spec master_secret(xssl_record:ssl_version(), #session{} | binary(), xssl_record:connection_states(),
+		   client | server) -> {binary(), xssl_record:connection_states()} | #alert{}.
 %%
 %% Description: Sets or calculates the master secret and calculate keys,
 %% updating the pending connection states. The Mastersecret and the update
@@ -476,7 +476,7 @@ verify_signature(Version, Msg, {HashAlgo, dsa}, Signature, {?'id-dsa', PublicKey
 master_secret(Version, #session{master_secret = Mastersecret},
 	      ConnectionStates, Role) ->
     #{security_parameters := SecParams} =
-	ssl_record:pending_connection_state(ConnectionStates, read),
+	xssl_record:pending_connection_state(ConnectionStates, read),
     try master_secret(Version, Mastersecret, SecParams,
 		      ConnectionStates, Role)
     catch
@@ -487,7 +487,7 @@ master_secret(Version, #session{master_secret = Mastersecret},
 
 master_secret(Version, PremasterSecret, ConnectionStates, Role) ->
     #{security_parameters := SecParams} =
-	ssl_record:pending_connection_state(ConnectionStates, read),
+	xssl_record:pending_connection_state(ConnectionStates, read),
     
     #security_parameters{prf_algorithm = PrfAlgo,
 			 client_random = ClientRandom,
@@ -556,7 +556,7 @@ verify_server_key(#server_key_params{params_bin = EncParams,
 		  HashSign = {HashAlgo, _},
 		  ConnectionStates, Version, PubKeyInfo) ->
     #{security_parameters := SecParams} =
-	ssl_record:pending_connection_state(ConnectionStates, read),
+	xssl_record:pending_connection_state(ConnectionStates, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
 
@@ -613,7 +613,7 @@ encode_handshake(#certificate_request{certificate_types = CertTypes,
                                       hashsign_algorithms = #hash_sign_algos{hash_sign_algos = HashSignAlgos},
                                       certificate_authorities = CertAuths},
                  ?TLS_1_2) ->
-    HashSigns = << <<(ssl_cipher:signature_scheme(SignatureScheme)):16 >> ||
+    HashSigns = << <<(xssl_cipher:signature_scheme(SignatureScheme)):16 >> ||
 		       SignatureScheme <- HashSignAlgos >>,
     EncCertAuths = encode_cert_auths(CertAuths),
     CertTypesLen = byte_size(CertTypes),
@@ -702,7 +702,7 @@ encode_extensions([#srp{username = UserName} | Rest], Acc) ->
     encode_extensions(Rest, <<?UINT16(?SRP_EXT), ?UINT16(Len), ?BYTE(SRPLen),
 				    UserName/binary, Acc/binary>>);
 encode_extensions([#hash_sign_algos{hash_sign_algos = HashSignAlgos} | Rest], Acc) ->
-    SignAlgoList = << <<(ssl_cipher:signature_scheme(SignatureScheme)):16 >> ||
+    SignAlgoList = << <<(xssl_cipher:signature_scheme(SignatureScheme)):16 >> ||
 		       SignatureScheme <- HashSignAlgos >>,
     ListLen = byte_size(SignAlgoList),
     Len = ListLen + 2,
@@ -710,7 +710,7 @@ encode_extensions([#hash_sign_algos{hash_sign_algos = HashSignAlgos} | Rest], Ac
 				 ?UINT16(Len), ?UINT16(ListLen), SignAlgoList/binary, Acc/binary>>);
 encode_extensions([#signature_algorithms{
                             signature_scheme_list = SignatureSchemes} | Rest], Acc) ->
-    SignSchemeList = << <<(ssl_cipher:signature_scheme(SignatureScheme)):16 >> ||
+    SignSchemeList = << <<(xssl_cipher:signature_scheme(SignatureScheme)):16 >> ||
 		       SignatureScheme <- SignatureSchemes >>,
     ListLen = byte_size(SignSchemeList),
     Len = ListLen + 2,
@@ -718,7 +718,7 @@ encode_extensions([#signature_algorithms{
 				 ?UINT16(Len), ?UINT16(ListLen), SignSchemeList/binary, Acc/binary>>);
 encode_extensions([#signature_algorithms_cert{
                             signature_scheme_list = SignatureSchemes} | Rest], Acc) ->
-    SignSchemeList = << <<(ssl_cipher:signature_scheme(SignatureScheme)):16 >> ||
+    SignSchemeList = << <<(xssl_cipher:signature_scheme(SignatureScheme)):16 >> ||
 		       SignatureScheme <- SignatureSchemes >>,
     ListLen = byte_size(SignSchemeList),
     Len = ListLen + 2,
@@ -971,8 +971,8 @@ decode_vector(<<?UINT16(Len), Vector:Len/binary>>) ->
     Vector.
 
 %%--------------------------------------------------------------------
--spec decode_hello_extensions(binary(), ssl_record:ssl_version(),
-                              ssl_record:ssl_version(), atom()) -> map().
+-spec decode_hello_extensions(binary(), xssl_record:ssl_version(),
+                              xssl_record:ssl_version(), atom()) -> map().
 %%
 %% Description: Decodes TLS hello extensions
 %%--------------------------------------------------------------------
@@ -1002,7 +1002,7 @@ decode_extensions(Extensions, Version, MessageType) ->
     decode_extensions(Extensions, Version, MessageType, empty_extensions()).
 
 %%--------------------------------------------------------------------
--spec decode_server_key(binary(), xssl:kex_algo(), ssl_record:ssl_version()) ->
+-spec decode_server_key(binary(), xssl:kex_algo(), xssl_record:ssl_version()) ->
 			       #server_key_params{}.
 %%
 %% Description: Decode server_key data and return appropriate type
@@ -1011,7 +1011,7 @@ decode_server_key(ServerKey, Type, Version) ->
     dec_server_key(ServerKey, key_exchange_alg(Type), Version).
 
 %%--------------------------------------------------------------------
--spec decode_client_key(binary(), xssl:kex_algo(), ssl_record:ssl_version()) ->
+-spec decode_client_key(binary(), xssl:kex_algo(), xssl_record:ssl_version()) ->
 			    #encrypted_premaster_secret{}
 			    | #client_diffie_hellman_public{}
 			    | #client_ec_diffie_hellman_public{}
@@ -1042,11 +1042,11 @@ decode_suites('3_bytes', Dec) ->
 %%====================================================================
 
 available_suites(UserSuites, Version) ->
-    VersionSuites = ssl_cipher:all_suites(Version) ++ ssl_cipher:anonymous_suites(Version),
+    VersionSuites = xssl_cipher:all_suites(Version) ++ xssl_cipher:anonymous_suites(Version),
     lists:filtermap(fun(Suite) -> lists:member(Suite, VersionSuites) end, UserSuites).
 
 available_suites(ServerCert, UserSuites, Version, undefined, Curve) ->
-    Suites = ssl_cipher:filter(ServerCert, available_suites(UserSuites, Version), Version),
+    Suites = xssl_cipher:filter(ServerCert, available_suites(UserSuites, Version), Version),
     filter_unavailable_ecc_suites(Curve, Suites);
 available_suites(ServerCert, UserSuites, Version, HashSigns, Curve) ->
     Suites = available_suites(ServerCert, UserSuites, Version, undefined, Curve),
@@ -1059,7 +1059,7 @@ available_signature_algs(SupportedHashSigns, Version) when ?TLS_GTE(Version, ?TL
         true ->
             case Version of 
                 ?TLS_1_2 ->
-                    #hash_sign_algos{hash_sign_algos = ssl_cipher:signature_schemes_1_2(SupportedHashSigns)};
+                    #hash_sign_algos{hash_sign_algos = xssl_cipher:signature_schemes_1_2(SupportedHashSigns)};
                 _ ->
                     #signature_algorithms{signature_scheme_list = SupportedHashSigns}
             end;
@@ -1077,7 +1077,7 @@ available_signature_algs(#hash_sign_algos{hash_sign_algos = ClientHashSigns}, Su
     SupportedHashSigns =
         case (Version == ?TLS_1_2) andalso contains_scheme(SupportedHashSigns0) of
             true ->
-                ssl_cipher:signature_schemes_1_2(SupportedHashSigns0);
+                xssl_cipher:signature_schemes_1_2(SupportedHashSigns0);
             false ->
                 SupportedHashSigns0
         end,
@@ -1439,7 +1439,7 @@ get_identities_binders([#xticket_data{key = Key,
 
 
 dummy_binder(HKDF) ->
-    binary:copy(<<0>>, ssl_cipher:hash_size(HKDF)).
+    binary:copy(<<0>>, xssl_cipher:hash_size(HKDF)).
 
 
 add_server_share(server_hello, Extensions, KeyShare) ->
@@ -1506,7 +1506,7 @@ handle_client_hello_extensions(RecordCB, Random, ClientCipherSuites,
 			       ConnectionStates0, Renegotiation, IsResumed) ->
     Session = handle_srp_extension(maps:get(srp, Exts, undefined), Session0),
     MaxFragEnum = handle_mfl_extension(maps:get(max_frag_enum, Exts, undefined)),
-    ConnectionStates1 = ssl_record:set_max_fragment_length(MaxFragEnum, ConnectionStates0),
+    ConnectionStates1 = xssl_record:set_max_fragment_length(MaxFragEnum, ConnectionStates0),
     ConnectionStates = handle_renegotiation_extension(server, RecordCB, Version, maps:get(renegotiation_info, Exts, undefined),
 						      Random, NegotiatedCipherSuite, 
 						      ClientCipherSuites,
@@ -1632,7 +1632,7 @@ select_curve({supported_groups, Groups}, Server, HonorServerOrder) ->
 
 %%--------------------------------------------------------------------
 -spec select_hashsign(#hash_sign_algos{} | undefined,  undefined | binary(), 
-		      atom(), [atom()], ssl_record:ssl_version()) ->
+		      atom(), [atom()], xssl_record:ssl_version()) ->
 			     {atom(), atom()} | undefined  | #alert{}.
 
 %%
@@ -1698,7 +1698,7 @@ select_hashsign(_, Cert, _, _, Version) ->
     select_hashsign_algs(undefined, Algo, Version).
 %%--------------------------------------------------------------------
 -spec select_hashsign(#certificate_request{},  binary(), 
-		      [atom()], ssl_record:ssl_version()) ->
+		      [atom()], xssl_record:ssl_version()) ->
 			     {atom(), atom()} | #alert{}.
 
 %%
@@ -1717,7 +1717,7 @@ select_hashsign(#certificate_request{
     case is_acceptable_cert_type(PublicKeyAlgo, Types) andalso
         is_supported_sign(SignAlgo, HashSigns) of
 	true ->
-            SupportedHashSigns = ssl_cipher:signature_schemes_1_2(SupportedHashSigns0),
+            SupportedHashSigns = xssl_cipher:signature_schemes_1_2(SupportedHashSigns0),
             do_select_hashsign(HashSigns, PublicKeyAlgo, SupportedHashSigns);
 	false ->
 	    ?ALERT_REC(?FATAL, ?INSUFFICIENT_SECURITY, no_suitable_signature_algorithm)
@@ -1737,7 +1737,7 @@ select_hashsign(#certificate_request{certificate_types = Types}, Cert, _, Versio
 do_select_hashsign(HashSigns, PublicKeyAlgo, SupportedHashSigns) ->
     TLS12Scheme = 
         fun(Scheme) ->
-                {H, S, _} = ssl_cipher:scheme_to_components(Scheme),
+                {H, S, _} = xssl_cipher:scheme_to_components(Scheme),
                 case S of
                     rsa_pkcs1 when PublicKeyAlgo == rsa ->
                         is_acceptable_hash_sign({H, rsa}, SupportedHashSigns) %% TLS-1.2 name
@@ -1778,7 +1778,7 @@ do_select_hashsign(HashSigns, PublicKeyAlgo, SupportedHashSigns) ->
         [] ->
             ?ALERT_REC(?FATAL, ?INSUFFICIENT_SECURITY, no_suitable_signature_algorithm);
         [HashSign | _] ->
-            case ssl_cipher:scheme_to_components(HashSign) of
+            case xssl_cipher:scheme_to_components(HashSign) of
                 {Hash, rsa_pkcs1, _} ->
                     {Hash, rsa};
                 {Hash, Sign, _} ->
@@ -1924,11 +1924,11 @@ client_signature_schemes(ClientHashSigns, undefined) ->
     ClientHashSigns;
 client_signature_schemes(_, #signature_algorithms_cert{
                                signature_scheme_list = ClientSignatureSchemes}) ->
-    ssl_cipher:signature_schemes_1_2(ClientSignatureSchemes).
+    xssl_cipher:signature_schemes_1_2(ClientSignatureSchemes).
 
 
 %%--------------------------------------------------------------------
--spec select_hashsign_algs({atom(), atom()}| undefined, oid(), ssl_record:ssl_version()) ->
+-spec select_hashsign_algs({atom(), atom()}| undefined, oid(), xssl_record:ssl_version()) ->
 				  {atom(), atom()}.
 
 %% Description: For TLS 1.2 hash function and signature algorithm pairs can be
@@ -2435,15 +2435,15 @@ master_secret(Version, MasterSecret,
 	setup_keys(Version, PrfAlgo, MasterSecret, ServerRandom,
 		   ClientRandom, HashSize, KML, IVS),
 
-    ConnStates1 = ssl_record:set_master_secret(MasterSecret, ConnectionStates),
+    ConnStates1 = xssl_record:set_master_secret(MasterSecret, ConnectionStates),
     ConnStates2 =
-	ssl_record:set_mac_secret(ClientWriteMacSecret, ServerWriteMacSecret,
+	xssl_record:set_mac_secret(ClientWriteMacSecret, ServerWriteMacSecret,
 				  Role, ConnStates1),
 
-    ClientCipherState = ssl_cipher:cipher_init(BCA, ClientIV, ClientWriteKey),
-    ServerCipherState = ssl_cipher:cipher_init(BCA, ServerIV, ServerWriteKey),
+    ClientCipherState = xssl_cipher:cipher_init(BCA, ClientIV, ClientWriteKey),
+    ServerCipherState = xssl_cipher:cipher_init(BCA, ServerIV, ServerWriteKey),
     {MasterSecret,
-     ssl_record:set_pending_cipher_state(ConnStates2, ClientCipherState,
+     xssl_record:set_pending_cipher_state(ConnStates2, ClientCipherState,
 					 ServerCipherState, Role)}.
 setup_keys(Version, PrfAlgo, MasterSecret,
 	   ServerRandom, ClientRandom, HashSize, KML, IVS) when ?TLS_1_X(Version)->
@@ -2460,9 +2460,9 @@ calc_master_secret(Version, PrfAlgo, PremasterSecret, ClientRandom, ServerRandom
 hello_pending_connection_states(_RecordCB, Role, Version, CipherSuite, Random,
 				 ConnectionStates) ->
     ReadState =
-	ssl_record:pending_connection_state(ConnectionStates, read),
+	xssl_record:pending_connection_state(ConnectionStates, read),
     WriteState =
-	ssl_record:pending_connection_state(ConnectionStates, write),
+	xssl_record:pending_connection_state(ConnectionStates, write),
 
     NewReadSecParams =
 	hello_security_parameters(Role, Version, ReadState, CipherSuite, Random),
@@ -2470,18 +2470,18 @@ hello_pending_connection_states(_RecordCB, Role, Version, CipherSuite, Random,
     NewWriteSecParams =
 	hello_security_parameters(Role, Version, WriteState, CipherSuite, Random),
 
-    ssl_record:set_security_params(NewReadSecParams,
+    xssl_record:set_security_params(NewReadSecParams,
 				    NewWriteSecParams,
 				    ConnectionStates).
 
 hello_security_parameters(client, Version, #{security_parameters := SecParams},
                           CipherSuite, Random) ->
-    NewSecParams = ssl_cipher:security_parameters(Version, CipherSuite, SecParams),
+    NewSecParams = xssl_cipher:security_parameters(Version, CipherSuite, SecParams),
     NewSecParams#security_parameters{server_random = Random};
 
 hello_security_parameters(server, Version, #{security_parameters := SecParams},
                           CipherSuite, Random) ->
-    NewSecParams = ssl_cipher:security_parameters(Version, CipherSuite, SecParams),
+    NewSecParams = xssl_cipher:security_parameters(Version, CipherSuite, SecParams),
     NewSecParams#security_parameters{
       client_random = Random
      }.
@@ -2616,11 +2616,11 @@ enc_sign(_HashSign, Sign, _Version) ->
 
 enc_hashsign(HashAlgo, SignAlgo) when SignAlgo == rsa_pss_pss;
                                       SignAlgo == rsa_pss_rsae ->
-    Sign = ssl_cipher:signature_scheme(list_to_existing_atom(atom_to_list(SignAlgo) ++ "_" ++ atom_to_list(HashAlgo))),
+    Sign = xssl_cipher:signature_scheme(list_to_existing_atom(atom_to_list(SignAlgo) ++ "_" ++ atom_to_list(HashAlgo))),
     <<?UINT16(Sign)>>;
 enc_hashsign(HashAlgo, SignAlgo) ->
-    Hash = ssl_cipher:hash_algorithm(HashAlgo),
-    Sign = ssl_cipher:sign_algorithm(SignAlgo),
+    Hash = xssl_cipher:hash_algorithm(HashAlgo),
+    Sign = xssl_cipher:sign_algorithm(SignAlgo),
     <<?BYTE(Hash), ?BYTE(Sign)>>.
 
 encode_protocol(Protocol, Acc) ->
@@ -2808,25 +2808,25 @@ dec_server_key_signature(Params, <<?BYTE(8), ?BYTE(SignAlgo),
                                    ?UINT16(0)>>, Version)
   when ?TLS_GTE(Version, ?TLS_1_2) ->
     <<?UINT16(Scheme0)>> = <<?BYTE(8), ?BYTE(SignAlgo)>>,
-    Scheme = ssl_cipher:signature_scheme(Scheme0),
-    {Hash, Sign, _} = ssl_cipher:scheme_to_components(Scheme),
+    Scheme = xssl_cipher:signature_scheme(Scheme0),
+    {Hash, Sign, _} = xssl_cipher:scheme_to_components(Scheme),
     {Params, {Hash, Sign}, <<>>};
 dec_server_key_signature(Params, <<?BYTE(8), ?BYTE(SignAlgo),
                                    ?UINT16(Len), Signature:Len/binary>>, Version)
   when ?TLS_GTE(Version, ?TLS_1_2) ->
     <<?UINT16(Scheme0)>> = <<?BYTE(8), ?BYTE(SignAlgo)>>,
-    Scheme = ssl_cipher:signature_scheme(Scheme0),
-    {Hash, Sign, _} = ssl_cipher:scheme_to_components(Scheme),
+    Scheme = xssl_cipher:signature_scheme(Scheme0),
+    {Hash, Sign, _} = xssl_cipher:scheme_to_components(Scheme),
     {Params, {Hash, Sign}, Signature};
 dec_server_key_signature(Params, <<?BYTE(HashAlgo), ?BYTE(SignAlgo),
 			    ?UINT16(0)>>, Version)
   when ?TLS_GTE(Version, ?TLS_1_2) ->
-    HashSign = {ssl_cipher:hash_algorithm(HashAlgo), ssl_cipher:sign_algorithm(SignAlgo)},
+    HashSign = {xssl_cipher:hash_algorithm(HashAlgo), xssl_cipher:sign_algorithm(SignAlgo)},
     {Params, HashSign, <<>>};
 dec_server_key_signature(Params, <<?BYTE(HashAlgo), ?BYTE(SignAlgo),
 			    ?UINT16(Len), Signature:Len/binary>>, Version)
   when ?TLS_GTE(Version, ?TLS_1_2) ->
-    HashSign = {ssl_cipher:hash_algorithm(HashAlgo), ssl_cipher:sign_algorithm(SignAlgo)},
+    HashSign = {xssl_cipher:hash_algorithm(HashAlgo), xssl_cipher:sign_algorithm(SignAlgo)},
     {Params, HashSign, Signature};
 dec_server_key_signature(Params, <<>>, _) ->
     {Params, {null, anon}, <<>>};
@@ -2914,7 +2914,7 @@ decode_extensions(<<?UINT16(?SIGNATURE_ALGORITHMS_EXT), ?UINT16(Len),
   when ?TLS_LT(Version, ?TLS_1_2) ->
     SignAlgoListLen = Len - 2,
     <<?UINT16(SignAlgoListLen), SignAlgoList/binary>> = ExtData,
-    HashSignAlgos = [{ssl_cipher:hash_algorithm(Hash), ssl_cipher:sign_algorithm(Sign)} ||
+    HashSignAlgos = [{xssl_cipher:hash_algorithm(Hash), xssl_cipher:sign_algorithm(Sign)} ||
 			<<?BYTE(Hash), ?BYTE(Sign)>> <= SignAlgoList],
     decode_extensions(Rest, Version, MessageType,
                       Acc#{signature_algs =>
@@ -2945,7 +2945,7 @@ decode_extensions(<<?UINT16(?SIGNATURE_ALGORITHMS_EXT), ?UINT16(Len),
     <<?UINT16(SignSchemeListLen), SignSchemeList/binary>> = ExtData,
     %% Ignore unknown signature algorithms
     Fun = fun(Elem) ->
-                  case ssl_cipher:signature_scheme(Elem) of
+                  case xssl_cipher:signature_scheme(Elem) of
                       unassigned ->
                           false;
                       Value ->
@@ -2965,7 +2965,7 @@ decode_extensions(<<?UINT16(?SIGNATURE_ALGORITHMS_CERT_EXT), ?UINT16(Len),
     <<?UINT16(SignSchemeListLen), SignSchemeList/binary>> = ExtData,
     %% Ignore unknown signature algorithms
     Fun = fun(Elem) ->
-                  case ssl_cipher:signature_scheme(Elem) of
+                  case xssl_cipher:signature_scheme(Elem) of
                       unassigned ->
                           false;
                       Value ->
@@ -3185,11 +3185,11 @@ decode_extensions(_, _, _, Acc) ->
 decode_sign_alg(?TLS_1_2, SignSchemeList) ->
     %% Ignore unknown signature algorithms
     Fun = fun(Elem) ->
-                  case ssl_cipher:signature_scheme(Elem) of
+                  case xssl_cipher:signature_scheme(Elem) of
                       unassigned ->
                           false;
                       Value when is_atom(Value)->
-                          case ssl_cipher:scheme_to_components(Value) of
+                          case xssl_cipher:scheme_to_components(Value) of
                               {Hash, rsa_pss_rsae = Sign, _} ->
                                   {true, {Hash, Sign}};
                               {Hash, rsa_pss_pss = Sign, _} ->
@@ -3210,7 +3210,7 @@ decode_sign_alg(?TLS_1_2, SignSchemeList) ->
 decode_sign_alg(?TLS_1_3, SignSchemeList) ->
     %% Ignore unknown signature algorithms
     Fun = fun(Elem) ->
-                  case ssl_cipher:signature_scheme(Elem) of
+                  case xssl_cipher:signature_scheme(Elem) of
                       unassigned ->
                           false;
                       Value ->
@@ -3471,7 +3471,7 @@ filter_hashsigns_helper(KeyExchange, _HashSigns, _Version) when
     true.
 
 filter_unavailable_ecc_suites(no_curve, Suites) ->
-    ECCSuites = ssl_cipher:filter_suites(Suites, #{key_exchange_filters => [fun(ecdh_ecdsa) -> true; 
+    ECCSuites = xssl_cipher:filter_suites(Suites, #{key_exchange_filters => [fun(ecdh_ecdsa) -> true; 
                                                                                (ecdhe_ecdsa) -> true; 
                                                                                (ecdh_rsa) -> true; 
                                                                                (_) -> false 
@@ -3583,7 +3583,7 @@ is_acceptable_cert_type(Sign, Types) ->
 %% signature.
 is_supported_sign({Hash, Sign}, SignatureSchemes) ->
     Fun = fun (Scheme) ->
-                  {H, S0, _} = ssl_cipher:scheme_to_components(Scheme),
+                  {H, S0, _} = xssl_cipher:scheme_to_components(Scheme),
                   S1 = case S0 of
                            rsa_pkcs1 ->
                                rsa;
@@ -3695,7 +3695,7 @@ supported_hashsigns(undefined) ->
 supported_hashsigns([default | SigAlgs]) ->
     supported_hashsigns(SigAlgs);
 supported_hashsigns(SigAlgs) ->
-    ssl_cipher:signature_schemes_1_2(SigAlgs).
+    xssl_cipher:signature_schemes_1_2(SigAlgs).
 
 %% convert max_fragment_length (in bytes) to the RFC 6066 ENUM
 max_frag_enum(?MAX_FRAGMENT_LENGTH_BYTES_1) ->
@@ -3712,21 +3712,21 @@ max_frag_enum(undefined) ->
 renegotiation_info(_, client, _, false) ->
     #renegotiation_info{renegotiated_connection = undefined};
 renegotiation_info(_RecordCB, server, ConnectionStates, false) ->
-    case ssl_record:current_connection_state(ConnectionStates, read) of
+    case xssl_record:current_connection_state(ConnectionStates, read) of
         #{reneg := #{secure_renegotiation := true}} ->
 	    #renegotiation_info{renegotiated_connection = ?byte(0)};
 	_ ->
 	    #renegotiation_info{renegotiated_connection = undefined}
     end;
 renegotiation_info(_RecordCB, client, ConnectionStates, true) ->
-    case ssl_record:current_connection_state(ConnectionStates, read) of
+    case xssl_record:current_connection_state(ConnectionStates, read) of
         #{reneg := #{secure_renegotiation := true, client_verify_data := Data}} ->
 	    #renegotiation_info{renegotiated_connection = Data};
 	_ ->
 	    #renegotiation_info{renegotiated_connection = undefined}
     end;
 renegotiation_info(_RecordCB, server, ConnectionStates, true) ->
-    case ssl_record:current_connection_state(ConnectionStates, read) of
+    case xssl_record:current_connection_state(ConnectionStates, read) of
         #{reneg := #{secure_renegotiation := true,
                      client_verify_data := CData,
                      server_verify_data := SData}} ->
@@ -3737,22 +3737,22 @@ renegotiation_info(_RecordCB, server, ConnectionStates, true) ->
 
 handle_renegotiation_info(_, _RecordCB, _, #renegotiation_info{renegotiated_connection = ?byte(0)},
 			  ConnectionStates, false, _, _) ->
-    {ok, ssl_record:set_renegotiation_flag(true, ConnectionStates)};
+    {ok, xssl_record:set_renegotiation_flag(true, ConnectionStates)};
 
 handle_renegotiation_info(_, _RecordCB, server, undefined, ConnectionStates, _, _, CipherSuites) ->
     case is_member(?TLS_EMPTY_RENEGOTIATION_INFO_SCSV, CipherSuites) of
 	true ->
-	    {ok, ssl_record:set_renegotiation_flag(true, ConnectionStates)};
+	    {ok, xssl_record:set_renegotiation_flag(true, ConnectionStates)};
 	false ->
-	    {ok, ssl_record:set_renegotiation_flag(false, ConnectionStates)}
+	    {ok, xssl_record:set_renegotiation_flag(false, ConnectionStates)}
     end;
 
 handle_renegotiation_info(_, _RecordCB, _, undefined, ConnectionStates, false, _, _) ->
-    {ok, ssl_record:set_renegotiation_flag(false, ConnectionStates)};
+    {ok, xssl_record:set_renegotiation_flag(false, ConnectionStates)};
 
 handle_renegotiation_info(_, _RecordCB, client, #renegotiation_info{renegotiated_connection = ClientServerVerify},
 			  ConnectionStates, true, _, _) ->
-    #{reneg := ReNeg} = ssl_record:current_connection_state(ConnectionStates, read),
+    #{reneg := ReNeg} = xssl_record:current_connection_state(ConnectionStates, read),
     #{client_verify_data := CData, server_verify_data := SData} = ReNeg,
     case <<CData/binary, SData/binary>> == ClientServerVerify of
 	true ->
@@ -3767,7 +3767,7 @@ handle_renegotiation_info(_, _RecordCB, server, #renegotiation_info{renegotiated
 	  true ->
               throw(?ALERT_REC(?FATAL, ?HANDSHAKE_FAILURE, {server_renegotiation, empty_renegotiation_info_scsv}));
 	  false ->
-	      case ssl_record:current_connection_state(ConnectionStates, read) of
+	      case xssl_record:current_connection_state(ConnectionStates, read) of
 		  #{reneg := #{client_verify_data := ClientVerify}} ->
 		      {ok, ConnectionStates};
 		  _ ->
@@ -3786,7 +3786,7 @@ handle_renegotiation_info(_, RecordCB, server, undefined, ConnectionStates, true
      end.
 
 handle_renegotiation_info(_RecordCB, ConnectionStates, SecureRenegotation) ->
-    #{reneg := #{secure_renegotiation := SR}} = ssl_record:current_connection_state(ConnectionStates, read),
+    #{reneg := #{secure_renegotiation := SR}} = xssl_record:current_connection_state(ConnectionStates, read),
     case {SecureRenegotation, SR} of
 	{_, true} ->
             throw(?ALERT_REC(?FATAL, ?HANDSHAKE_FAILURE, already_secure));

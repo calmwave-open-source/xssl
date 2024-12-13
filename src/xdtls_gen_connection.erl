@@ -501,7 +501,7 @@ next_flight(Flight) ->
 
 retransmit_epoch(_StateName, #state{connection_states = ConnectionStates}) ->
     #{epoch := Epoch} =
-	ssl_record:current_connection_state(ConnectionStates, write),
+	xssl_record:current_connection_state(ConnectionStates, write),
     Epoch.
 
 handle_flight_timer(#state{static_env = #static_env{data_tag = udp},
@@ -540,7 +540,7 @@ handle_state_timeout(flight_retransmission_timeout, StateName,
     end.
 
 send_handshake(Handshake, #state{connection_states = ConnectionStates} = State) ->
-    #{epoch := Epoch} = ssl_record:current_connection_state(ConnectionStates, write),
+    #{epoch := Epoch} = xssl_record:current_connection_state(ConnectionStates, write),
     send_handshake_flight(queue_handshake(Handshake, State), Epoch).
 
 queue_handshake(Handshake0, #state{handshake_env =
@@ -612,7 +612,7 @@ select_sni_extension(_) ->
     undefined.
 
 empty_connection_state(ConnectionEnd) ->
-    Empty = ssl_record:empty_connection_state(ConnectionEnd),
+    Empty = xssl_record:empty_connection_state(ConnectionEnd),
     xdtls_record:empty_connection_state(Empty).
 
 %%====================================================================
@@ -896,7 +896,7 @@ decode_cipher_text(#state{protocol_buffers = #protocol_buffers{dtls_cipher_texts
     end.
 
 decode_alerts(Bin) ->
-    ssl_alert:decode(Bin).
+    xssl_alert:decode(Bin).
 
 handle_alerts([], Result) ->
     Result;
