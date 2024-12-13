@@ -463,12 +463,12 @@ handle_common(_StateName, info, {'EXIT', _Sup, shutdown}, StateData) ->
     {stop, shutdown, StateData};
 handle_common(StateName, info, Msg,
               #data{static = #static{log_level = Level}} = StateData) ->
-    ssl_logger:log(info, Level, #{event => "TLS sender received unexpected info",
+    xssl_logger:log(info, Level, #{event => "TLS sender received unexpected info",
                                   reason => [{message, Msg}]}, ?LOCATION),
     hibernate_after(StateName, StateData, []);
 handle_common(StateName, Type, Msg,
               #data{static = #static{log_level = Level}} = StateData) ->
-    ssl_logger:log(error, Level, #{event => "TLS sender received unexpected event",
+    xssl_logger:log(error, Level, #{event => "TLS sender received unexpected event",
                                    reason => [{type, Type}, {message, Msg}]}, ?LOCATION),
     hibernate_after(StateName, StateData, []).
 
@@ -479,9 +479,9 @@ send_tls_alert(#alert{} = Alert,
                                       log_level = LogLevel},
                      connection_states = ConnectionStates0} = StateData0) ->
     {BinMsg, ConnectionStates} =
-	tls_record:encode_alert_record(Alert, Version, ConnectionStates0),
+	xtls_record:encode_alert_record(Alert, Version, ConnectionStates0),
     xtls_socket:send(Transport, Socket, BinMsg),
-    ssl_logger:debug(LogLevel, outbound, 'record', BinMsg),
+    xssl_logger:debug(LogLevel, outbound, 'record', BinMsg),
     StateData0#data{connection_states = ConnectionStates}.
 
 send_application_data(Data, From, StateName,
@@ -516,14 +516,14 @@ send_application_data(Data, From, StateName,
 	    {Msgs, ConnectionStates} = xtls_record:encode_data(Data, Version, ConnectionStates0),
 	    case xtls_socket:send(Transport, Socket, Msgs) of
                 ok when DistHandle =/=  undefined ->
-                    ssl_logger:debug(LogLevel, outbound, 'record', Msgs),
+                    xssl_logger:debug(LogLevel, outbound, 'record', Msgs),
                     StateData1 = update_bytes_sent(Version, ConnectionStates, StateData0, DataSz),
                     hibernate_after(StateName, StateData1, []);
                 Reason when DistHandle =/= undefined ->
                     StateData = StateData0#data{connection_states = ConnectionStates},
                     death_row_shutdown(Reason, StateData);
                 ok ->
-                    ssl_logger:debug(LogLevel, outbound, 'record', Msgs),
+                    xssl_logger:debug(LogLevel, outbound, 'record', Msgs),
                     StateData = update_bytes_sent(Version, ConnectionStates, StateData0, DataSz),
                     gen_statem:reply(From, ok),
                     hibernate_after(StateName, StateData, []);
@@ -545,17 +545,17 @@ send_post_handshake_data(Handshake, From, StateName,
     BinHandshake = xtls_handshake:encode_handshake(Handshake, Version),
     {Encoded, ConnectionStates} =
         xtls_record:encode_handshake(BinHandshake, Version, ConnectionStates0),
-    ssl_logger:debug(LogLevel, outbound, 'handshake', Handshake),
+    xssl_logger:debug(LogLevel, outbound, 'handshake', Handshake),
     StateData1 = StateData0#data{connection_states = ConnectionStates},
     case xtls_socket:send(Transport, Socket, Encoded) of
         ok when DistHandle =/=  undefined ->
-            ssl_logger:debug(LogLevel, outbound, 'record', Encoded),
+            xssl_logger:debug(LogLevel, outbound, 'record', Encoded),
             StateData = maybe_update_cipher_key(StateData1, Handshake),
             {next_state, StateName, StateData, []};
         Reason when DistHandle =/= undefined ->
             death_row_shutdown(Reason, StateData1);
         ok ->
-            ssl_logger:debug(LogLevel, outbound, 'record', Encoded),
+            xssl_logger:debug(LogLevel, outbound, 'record', Encoded),
             StateData = maybe_update_cipher_key(StateData1, Handshake),
             {next_state, StateName, StateData,  [{reply, From, ok}]};
         Result ->

@@ -78,7 +78,7 @@ MODULES= \
 	ssl_dist_connection_sup \
 	ssl_dist_sup \
         xssl_gen_statem \
-	ssl_handshake \
+	xssl_handshake \
 	ssl_listen_tracker_sup \
 	ssl_logger \
 	xssl_manager \
@@ -128,7 +128,7 @@ INTERNAL_HRL_FILES = \
 	ssl_api.hrl \
 	xssl_cipher.hrl \
 	ssl_connection.hrl \
-	ssl_handshake.hrl \
+	xssl_handshake.hrl \
 	ssl_internal.hrl \
 	xssl_record.hrl \
 	ssl_srp.hrl \

@@ -275,7 +275,7 @@ wait_cert_verify(internal, #certificate_verify{signature = Signature,
     %% Use negotiated value if TLS-1.2 otherwise return default
     HashSign = xtls_xdtls_gen_connection:negotiated_hashsign(CertHashSign, KexAlg,
                                                            PubKeyInfo, TLSVersion),
-    case ssl_handshake:certificate_verify(Signature, PubKeyInfo,
+    case xssl_handshake:certificate_verify(Signature, PubKeyInfo,
 					  TLSVersion, HashSign, MasterSecret, Hist) of
 	valid ->
             HsEnv = HsEnv0#handshake_env{client_certificate_status = verified},
@@ -346,11 +346,11 @@ connection({call, From}, renegotiate, #state{static_env = #static_env{socket = S
                                              connection_env =
                                                  #connection_env{negotiated_version = Version},
                                              connection_states = ConnectionStates0} = State0) ->
-    HelloRequest = ssl_handshake:hello_request(),
+    HelloRequest = xssl_handshake:hello_request(),
     Frag = xtls_handshake:encode_handshake(HelloRequest, Version),
-    Hs0 = ssl_handshake:init_handshake_history(),
+    Hs0 = xssl_handshake:init_handshake_history(),
     {BinMsg, ConnectionStates} =
-	tls_record:encode_handshake(Frag, Version, ConnectionStates0),
+	xtls_record:encode_handshake(Frag, Version, ConnectionStates0),
     xtls_socket:send(Transport, Socket, BinMsg),
     State = State0#state{connection_states =
 			     ConnectionStates,
@@ -431,7 +431,7 @@ choose_tls_fsm(#{versions := Versions},
                                      #client_hello_versions{versions = ClientVersions}
                                 }
                  }) ->
-    case ssl_handshake:select_supported_version(ClientVersions, Versions) of
+    case xssl_handshake:select_supported_version(ClientVersions, Versions) of
         ?TLS_1_3 ->
             xtls_1_3_fsm;
         _Else ->
@@ -456,11 +456,11 @@ renegotiate(#state{static_env = #static_env{socket = Socket,
                    handshake_env = HsEnv,
                    connection_env = #connection_env{negotiated_version = Version},
 		   connection_states = ConnectionStates0} = State0, Actions) ->
-    HelloRequest = ssl_handshake:hello_request(),
+    HelloRequest = xssl_handshake:hello_request(),
     Frag = xtls_handshake:encode_handshake(HelloRequest, Version),
-    Hs0 = ssl_handshake:init_handshake_history(),
+    Hs0 = xssl_handshake:init_handshake_history(),
     {BinMsg, ConnectionStates} =
-	tls_record:encode_handshake(Frag, Version, ConnectionStates0),
+	xtls_record:encode_handshake(Frag, Version, ConnectionStates0),
     xtls_socket:send(Transport, Socket, BinMsg),
     State = State0#state{connection_states =
 			     ConnectionStates,

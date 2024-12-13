@@ -125,14 +125,14 @@ server_hello(MsgType, SessionId, KeyShare, PSK, ConnectionStates) ->
 %% Section 4.2.2) extension.
 server_hello_extensions(hello_retry_request = MsgType, KeyShare, _) ->
     Extensions = server_hello_extensions_versions(),
-    ssl_handshake:add_server_share(MsgType, Extensions, KeyShare);
+    xssl_handshake:add_server_share(MsgType, Extensions, KeyShare);
 server_hello_extensions(MsgType, KeyShare, undefined) ->
     Extensions = server_hello_extensions_versions(),
-    ssl_handshake:add_server_share(MsgType, Extensions, KeyShare);
+    xssl_handshake:add_server_share(MsgType, Extensions, KeyShare);
 server_hello_extensions(MsgType, KeyShare, {SelectedIdentity, _}) ->
     Extensions = server_hello_extensions_versions(),
     PreSharedKey = #pre_shared_key_server_hello{selected_identity = SelectedIdentity},
-    ssl_handshake:add_server_share(MsgType, Extensions#{pre_shared_key => PreSharedKey}, KeyShare).
+    xssl_handshake:add_server_share(MsgType, Extensions#{pre_shared_key => PreSharedKey}, KeyShare).
 
 server_hello_extensions_versions() ->
     SupportedVersions = #server_hello_selected_version{selected_version = ?TLS_1_3},
@@ -188,7 +188,7 @@ encrypted_extensions(#state{handshake_env = HandshakeEnv}) ->
              undefined ->
                  E0;
              ALPNProtocol ->
-                 ssl_handshake:add_alpn(#{}, ALPNProtocol)
+                 xssl_handshake:add_alpn(#{}, ALPNProtocol)
          end,
     E2 = case HandshakeEnv#handshake_env.max_frag_enum of
              undefined ->
@@ -221,7 +221,7 @@ certificate_request(SignAlgs0, SignAlgsCert0, CertDbHandle, CertDbRef, CertAuthB
     Extensions0 = add_signature_algorithms(#{}, SignAlgs),
     Extensions1 = add_signature_algorithms_cert(Extensions0, SignAlgsCert),
     Extensions = if CertAuthBool =:= true ->
-                        Auths = ssl_handshake:certificate_authorities(CertDbHandle, CertDbRef),
+                        Auths = xssl_handshake:certificate_authorities(CertDbHandle, CertDbRef),
                         Extensions1#{certificate_authorities => #certificate_authorities{authorities = Auths}};
                     true ->
                         Extensions1
@@ -397,7 +397,7 @@ create_change_cipher_spec(#state{ssl_options = #{log_level := LogLevel}}) ->
                 mac_secret => undefined}},
     {BinChangeCipher, _} =
         xtls_record:encode_change_cipher_spec(?LEGACY_VERSION, ConnectionStates),
-    ssl_logger:debug(LogLevel, outbound, 'record', BinChangeCipher),
+    xssl_logger:debug(LogLevel, outbound, 'record', BinChangeCipher),
     [BinChangeCipher].
 
 %%====================================================================
@@ -576,7 +576,7 @@ encode_handshake(#key_update{request_update = Update}) ->
     EncUpdate = encode_key_update(Update),
     {?KEY_UPDATE, <<EncUpdate/binary>>};
 encode_handshake(HandshakeMsg) ->
-    ssl_handshake:encode_handshake(HandshakeMsg, ?TLS_1_3).
+    xssl_handshake:encode_handshake(HandshakeMsg, ?TLS_1_3).
 
 encode_early_data(Cipher,
                   #state{
@@ -609,7 +609,7 @@ decode_handshake(?SERVER_HELLO, <<?BYTE(Major), ?BYTE(Minor), Random:32/binary,
                                   Cipher_suite:2/binary, ?BYTE(_CompMethod),
                                   ?UINT16(ExtLen), Extensions:ExtLen/binary>>)
   when Random =:= ?HELLO_RETRY_REQUEST_RANDOM ->
-    HelloExtensions = ssl_handshake:decode_hello_extensions(Extensions, ?TLS_1_3, {Major, Minor},
+    HelloExtensions = xssl_handshake:decode_hello_extensions(Extensions, ?TLS_1_3, {Major, Minor},
                                                             hello_retry_request),
     #server_hello{
        server_version = {Major,Minor},
@@ -665,7 +665,7 @@ decode_handshake(?END_OF_EARLY_DATA, _) ->
 decode_handshake(?KEY_UPDATE, <<?BYTE(Update)>>) ->
     #key_update{request_update = decode_key_update(Update)};
 decode_handshake(Tag, HandshakeMsg) ->
-    ssl_handshake:decode_handshake(?TLS_1_3, Tag, HandshakeMsg).
+    xssl_handshake:decode_handshake(?TLS_1_3, Tag, HandshakeMsg).
 
 is_valid_binder(Binder, HHistory, PSK, Hash) ->
     case HHistory of
@@ -735,10 +735,10 @@ decode_cert_entries(Entries) ->
       || <<?UINT24(DSize), Data:DSize/binary, ?UINT16(Esize), BinExts:Esize/binary>> <= Entries ].
 
 encode_extensions(Exts)->
-    ssl_handshake:encode_extensions(extensions_list(Exts)).
+    xssl_handshake:encode_extensions(extensions_list(Exts)).
 
 decode_extensions(Exts, MessageType) ->
-    ssl_handshake:decode_extensions(Exts, ?TLS_1_3, MessageType).
+    xssl_handshake:decode_extensions(Exts, ?TLS_1_3, MessageType).
 
 extensions_list(Extensions) ->
     [Ext || {_, Ext} <- maps:to_list(Extensions)].
@@ -777,7 +777,7 @@ certificate_entry(DER) ->
 sign(THash, Context, HashAlgo, PrivateKey, SignAlgo) ->
     Content = build_content(Context, THash),
     try
-        {ok, ssl_handshake:digitally_signed(?TLS_1_3, Content, HashAlgo, PrivateKey, SignAlgo)}
+        {ok, xssl_handshake:digitally_signed(?TLS_1_3, Content, HashAlgo, PrivateKey, SignAlgo)}
     catch throw:Alert ->
             {error, Alert}
     end.
@@ -785,7 +785,7 @@ sign(THash, Context, HashAlgo, PrivateKey, SignAlgo) ->
 
 verify(THash, Context, HashAlgo, SignAlgo, Signature, PublicKeyInfo) ->
     Content = build_content(Context, THash),
-    try ssl_handshake:verify_signature(?TLS_1_3, Content, {HashAlgo, SignAlgo}, Signature, PublicKeyInfo) of
+    try xssl_handshake:verify_signature(?TLS_1_3, Content, {HashAlgo, SignAlgo}, Signature, PublicKeyInfo) of
         Result ->
             {ok, Result}
     catch
@@ -814,7 +814,7 @@ validate_certificate_chain(CertEntries, CertDbHandle, CertDbRef,
                            SslOptions, CRLDbHandle, Role, Host, StaplingState) ->
     try split_cert_entries(CertEntries, StaplingState, [], #{}) of
         {Certs, ExtInfo} ->
-            ssl_handshake:certify(Certs, CertDbHandle,
+            xssl_handshake:certify(Certs, CertDbHandle,
                                   CertDbRef, SslOptions, CRLDbHandle, Role, Host, ?TLS_1_3,
                                   ExtInfo)
     catch error:{_,{error, {asn1, Asn1Reason}}}=Reason:ST ->
@@ -1566,7 +1566,7 @@ compare_sign_algos(_, _, _, _) ->
 
 get_certificate_params(Cert) ->
     {SignAlgo0, Param, SubjectPublicKeyAlgo0, RSAKeySize, Curve} =
-        ssl_handshake:get_cert_params(Cert),
+        xssl_handshake:get_cert_params(Cert),
     {SignHash, SignAlgo} = oids_to_atoms(SignAlgo0, Param),
     SubjectPublicKeyAlgo = public_key_algo(SubjectPublicKeyAlgo0),
     {SubjectPublicKeyAlgo, SignAlgo, SignHash, RSAKeySize, Curve}.
@@ -1579,7 +1579,7 @@ oids_to_atoms(?'id-RSASSA-PSS', #'RSASSA-PSS-params'{maskGenAlgorithm =
 oids_to_atoms(SignAlgo, _) ->
     public_key:pkix_sign_types(SignAlgo).
 
-%% Note: copied from ssl_handshake
+%% Note: copied from xssl_handshake
 public_key_algo(?'id-RSASSA-PSS') ->
     rsa_pss_pss;
 public_key_algo(?rsaEncryption) ->
@@ -1893,7 +1893,7 @@ path_validation(TrustedCert, Path, ServerName, Role, CertDbHandle, CertDbRef, CR
                 #{cert_ext := CertExt,
                   stapling_state := StaplingState}) ->
     ValidationFunAndState =
-        ssl_handshake:validation_fun_and_state(VerifyFun,
+        xssl_handshake:validation_fun_and_state(VerifyFun,
                                                #{role => Role,
                                                  certdb => CertDbHandle,
                                                  certdb_ref => CertDbRef,
@@ -1913,7 +1913,7 @@ path_validation(TrustedCert, Path, ServerName, Role, CertDbHandle, CertDbRef, CR
                                                  path_len => length(Path)
                                                 },
                                                Path, LogLevel),
-    Options = ssl_handshake:path_validation_options(Opts, ValidationFunAndState),
+    Options = xssl_handshake:path_validation_options(Opts, ValidationFunAndState),
     public_key:pkix_path_validation(TrustedCert, Path, Options).
 
 select_client_cert_key_pair(Session0,

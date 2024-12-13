@@ -87,7 +87,7 @@ initial_state(Role, Sender, Tab, Host, Port, Socket,
        static_env = InitStatEnv,
        handshake_env = #handshake_env{
                           tls_handshake_history =
-                              ssl_handshake:init_handshake_history(),
+                              xssl_handshake:init_handshake_history(),
                           flight_buffer = [],
                           renegotiation = {false, first}
                          },
@@ -96,7 +96,7 @@ initial_state(Role, Sender, Tab, Host, Port, Socket,
        ssl_options = SSLOptions,
        session = #session{is_resumable = false,
                           session_id =
-                              ssl_session:legacy_session_id(SSLOptions)},
+                              xssl_session:legacy_session_id(SSLOptions)},
        connection_states = ConnectionStates,
        protocol_buffers = #protocol_buffers{},
        user_data_buffer = {[],0,[]},

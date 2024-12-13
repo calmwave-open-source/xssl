@@ -317,7 +317,7 @@ hello_middlebox_assert(internal, #change_cipher_spec{}, State) ->
     xtls_gen_connection:next_event(wait_ee, no_record, State);
 hello_middlebox_assert(internal = Type, #encrypted_extensions{} = Msg,
                        #state{ssl_options = #{log_level := Level}} = State) ->
-    ssl_logger:log(warning, Level, #{description => "Failed to assert middlebox server message",
+    xssl_logger:log(warning, Level, #{description => "Failed to assert middlebox server message",
                                      reason => [{missing, #change_cipher_spec{}}]}, ?LOCATION),
     xssl_gen_statem:handle_common_event(Type, Msg, hello_middlebox_assert, State);
 hello_middlebox_assert(info, Msg, State) ->
@@ -337,7 +337,7 @@ hello_retry_middlebox_assert(internal, #change_cipher_spec{}, State) ->
     xtls_gen_connection:next_event(wait_sh, no_record, State);
 hello_retry_middlebox_assert(internal = Type, #server_hello{} = Msg,
                              #state{ssl_options = #{log_level := Level}} = State) ->
-    ssl_logger:log(warning, Level, #{description => "Failed to assert middlebox server message",
+    xssl_logger:log(warning, Level, #{description => "Failed to assert middlebox server message",
                                      reason => [{missing, #change_cipher_spec{}}]}, ?LOCATION),
     xssl_gen_statem:handle_common_event(Type, Msg, ?STATE(hello_retry_middlebox_assert), State);
 hello_retry_middlebox_assert(info, Msg, State) ->
@@ -564,7 +564,7 @@ maybe_automatic_session_resumption(#state{ssl_options =
                                          } = State0)
   when ?TLS_GTE(Version, ?TLS_1_3) andalso
        SessionTickets =:= auto ->
-    AvailableCipherSuites = ssl_handshake:available_suites(UserSuites, Version),
+    AvailableCipherSuites = xssl_handshake:available_suites(UserSuites, Version),
     HashAlgos = cipher_hash_algos(AvailableCipherSuites),
     Ciphers = xtls_handshake_1_3:ciphers_for_early_data(AvailableCipherSuites),
     %% Find a pair of tickets KeyPair = {Ticket0, Ticket2} where
@@ -709,8 +709,8 @@ do_handle_exlusive_1_3_hello_or_hello_retry_request(
                                                                     BinMsg0),
 
         xtls_socket:send(Transport, Socket, BinMsg),
-        ssl_logger:debug(LogLevel, outbound, 'handshake', Hello),
-        ssl_logger:debug(LogLevel, outbound, 'record', BinMsg),
+        xssl_logger:debug(LogLevel, outbound, 'handshake', Hello),
+        xssl_logger:debug(LogLevel, outbound, 'record', BinMsg),
 
         State = State3#state{
                   connection_states = ConnectionStates,
@@ -910,7 +910,7 @@ signal_user_early_data(#state{
 
 maybe_max_fragment_length(Extensions, State) ->
     ServerMaxFragEnum = maps:get(max_frag_enum, Extensions, undefined),
-    ClientMaxFragEnum = ssl_handshake:max_frag_enum(
+    ClientMaxFragEnum = xssl_handshake:max_frag_enum(
                           maps:get(max_fragment_length,
                                    State#state.ssl_options, undefined)),
     if ServerMaxFragEnum == ClientMaxFragEnum ->
@@ -986,7 +986,7 @@ maybe_queue_cert_verify(_Certificate,
 decode_alpn(undefined) ->
     undefined;
 decode_alpn(Encoded) ->
-    [Decoded] = ssl_handshake:decode_alpn(Encoded),
+    [Decoded] = xssl_handshake:decode_alpn(Encoded),
     Decoded.
 
 %% Verify that selected group is offered by the client.

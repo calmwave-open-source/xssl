@@ -437,7 +437,7 @@ trace_profiles() ->
      {csp, %% OCSP
       fun(M, F, A) -> dbg:tpl(M, F, A, x) end,
       fun(M, F, A) -> dbg:ctpl(M, F, A) end,
-      [{ssl_handshake, [{maybe_add_certificate_status_request, 4},
+      [{xssl_handshake, [{maybe_add_certificate_status_request, 4},
                         {client_hello_extensions, 10}, {cert_status_check, 5},
                         {handle_cert_status_extension, 2},
                         {path_validation, 10},
@@ -472,7 +472,7 @@ trace_profiles() ->
                           {issuer, 1}]},
        {xssl_cipher, [{filter, 3}]},
        {xssl_gen_statem, [{initial_hello, 3}]},
-       {ssl_handshake, [{path_validate, 11}, {path_validation, 10},
+       {xssl_handshake, [{path_validate, 11}, {path_validation, 10},
                         {select_hashsign, 5}, {get_cert_params, 1},
                         {cert_curve, 3},
                         {maybe_check_hostname, 4}]},

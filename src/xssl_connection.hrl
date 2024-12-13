@@ -60,7 +60,7 @@
 -record(handshake_env, {
                         client_hello_version  :: xssl_record:ssl_version() | 'undefined', %% Legacy client hello
                         unprocessed_handshake_events = 0    :: integer(),
-                        tls_handshake_history :: ssl_handshake:ssl_handshake_history() | term()
+                        tls_handshake_history :: xssl_handshake:xssl_handshake_history() | term()
                                                | 'undefined',
                         expecting_finished =                  false ::boolean(),
                         renegotiation        :: undefined | {boolean(), From::term() | internal | peer},
@@ -87,7 +87,7 @@
                                      term(),
                         diffie_hellman_params:: #'DHParameter'{} | undefined | term(),
                         srp_params           :: #srp_user{} | term() | 'undefined',
-                        public_key_info      :: ssl_handshake:public_key_info() | 'undefined',
+                        public_key_info      :: xssl_handshake:public_key_info() | 'undefined',
                         premaster_secret     :: binary() | term() | 'undefined',
                         server_psk_identity         :: binary() | 'undefined',  % server psk identity hint
                         cookie_iv_shard         :: {binary(), binary()} %% IV, Shard

@@ -20,7 +20,7 @@
 
 %%----------------------------------------------------------------------
 %% Purpose: Help functions for handling certificate verification.
-%% The path validation defined in ssl_handshake.erl that mainly
+%% The path validation defined in xssl_handshake.erl that mainly
 %% calls functions in this module is described in RFC 3280. 
 %% The basic verification checks are done by
 %% public_key:pkix_path_validation/3
@@ -602,7 +602,7 @@ verify_cert_extensions(_Cert, UserState = #{stapling_state := #{configured := tr
     %% extension MAY return a suitable certificate status response to the
     %% client along with their certificate.
     Desc = "Certificate Status - stapling response not provided by the server",
-    ssl_logger:log(notice, LogLevel, #{description => Desc,
+    xssl_logger:log(notice, LogLevel, #{description => Desc,
                                      reason => [{missing, stapling_response}]},
                    ?LOCATION),
     {valid, UserState};
@@ -639,7 +639,7 @@ verify_cert_extensions(Cert, #{stapling_state := StaplingState,
                 fun H([{missing, ocsp_nonce} | Rest]) ->
                         Desc = "Certificate Status - stapling response "
                             "provided but with nonce missing",
-                        ssl_logger:log(info, LogLevel,
+                        xssl_logger:log(info, LogLevel,
                                        #{description => Desc,
                                          reason => [{missing, stapling_nonce}]},
                                        ?LOCATION),

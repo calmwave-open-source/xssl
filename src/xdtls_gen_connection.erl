@@ -118,7 +118,7 @@ initial_state(Role, Tab, Host, Port, Socket,
     #state{tab = Tab,
            static_env = InitStatEnv,
            handshake_env = #handshake_env{
-                              tls_handshake_history = ssl_handshake:init_handshake_history(),
+                              tls_handshake_history = xssl_handshake:init_handshake_history(),
                               renegotiation = {false, first},
                               allow_renegotiate = maps:get(client_renegotiation, SSLOptions, undefined),
                               flight_buffer = new_flight()
@@ -327,7 +327,7 @@ send_handshake_flight(#state{static_env = #static_env{socket = Socket,
     {Encoded, ConnectionStates} =
 	encode_handshake_flight(lists:reverse(Flight), Version, MaxSize, Epoch, ConnectionStates0),
     send_packets(Transport, Socket, MaxSize, Encoded),
-    ssl_logger:debug(LogLevel, outbound, 'record', Encoded),
+    xssl_logger:debug(LogLevel, outbound, 'record', Encoded),
    {State0#state{connection_states = ConnectionStates}, []};
 
 send_handshake_flight(#state{static_env = #static_env{socket = Socket,
@@ -348,8 +348,8 @@ send_handshake_flight(#state{static_env = #static_env{socket = Socket,
 	encode_handshake_flight(lists:reverse(Flight0), Version, MaxSize, Epoch, ConnectionStates0),
     {EncChangeCipher, ConnectionStates} = encode_change_cipher(ChangeCipher, Version, Epoch, ConnectionStates1),
     send_packets(Transport, Socket, MaxSize, HsBefore ++ EncChangeCipher),
-    ssl_logger:debug(LogLevel, outbound, 'record', [HsBefore]),
-    ssl_logger:debug(LogLevel, outbound, 'record', [EncChangeCipher]),
+    xssl_logger:debug(LogLevel, outbound, 'record', [HsBefore]),
+    xssl_logger:debug(LogLevel, outbound, 'record', [EncChangeCipher]),
     {State0#state{connection_states = ConnectionStates}, []};
 
 send_handshake_flight(#state{static_env = #static_env{socket = Socket,
@@ -373,9 +373,9 @@ send_handshake_flight(#state{static_env = #static_env{socket = Socket,
     {HsAfter, ConnectionStates} =
 	encode_handshake_flight(lists:reverse(Flight1), Version, MaxSize, Epoch, ConnectionStates2),
     send_packets(Transport, Socket, MaxSize, HsBefore ++ EncChangeCipher ++ HsAfter),
-    ssl_logger:debug(LogLevel, outbound, 'record', [HsBefore]),
-    ssl_logger:debug(LogLevel, outbound, 'record', [EncChangeCipher]),
-    ssl_logger:debug(LogLevel, outbound, 'record', [HsAfter]),
+    xssl_logger:debug(LogLevel, outbound, 'record', [HsBefore]),
+    xssl_logger:debug(LogLevel, outbound, 'record', [EncChangeCipher]),
+    xssl_logger:debug(LogLevel, outbound, 'record', [HsAfter]),
     {State0#state{connection_states = ConnectionStates}, []};
 
 send_handshake_flight(#state{static_env = #static_env{socket = Socket,
@@ -397,8 +397,8 @@ send_handshake_flight(#state{static_env = #static_env{socket = Socket,
     {HsAfter, ConnectionStates} =
 	encode_handshake_flight(lists:reverse(Flight1), Version, MaxSize, Epoch, ConnectionStates1),
     send_packets(Transport, Socket, MaxSize, EncChangeCipher ++ HsAfter),
-    ssl_logger:debug(LogLevel, outbound, 'record', [EncChangeCipher]),
-    ssl_logger:debug(LogLevel, outbound, 'record', [HsAfter]),
+    xssl_logger:debug(LogLevel, outbound, 'record', [EncChangeCipher]),
+    xssl_logger:debug(LogLevel, outbound, 'record', [HsAfter]),
     {State0#state{connection_states = ConnectionStates}, []}.
 
 
@@ -554,7 +554,7 @@ queue_handshake(Handshake0, #state{handshake_env =
                                    ssl_options = #{log_level := LogLevel}} = State) ->
     Handshake = xdtls_handshake:encode_handshake(Handshake0, Version, Seq),
     Hist = update_handshake_history(Handshake0, Handshake, Hist0),
-    ssl_logger:debug(LogLevel, outbound, 'handshake', Handshake0),
+    xssl_logger:debug(LogLevel, outbound, 'handshake', Handshake0),
 
     Flight = Flight0#{handshakes => [Handshake | HsBuffer0], next_sequence => Seq +1},
     HsEnv = HsEnv0#handshake_env{tls_handshake_history = Hist, flight_buffer = Flight},
@@ -570,7 +570,7 @@ queue_handshake(Handshake0, #state{handshake_env =
                                    ssl_options = #{log_level := LogLevel}} = State) ->
     Handshake = xdtls_handshake:encode_handshake(Handshake0, Version, Seq),
     Hist = update_handshake_history(Handshake0, Handshake, Hist0),
-    ssl_logger:debug(LogLevel, outbound, 'handshake', Handshake0),
+    xssl_logger:debug(LogLevel, outbound, 'handshake', Handshake0),
 
     Flight = Flight0#{handshakes_after_change_cipher_spec => [Handshake | Buffer0],
                       next_sequence => Seq +1},
@@ -594,7 +594,7 @@ reinit_handshake_data(#state{static_env = #static_env{data_tag = DataTag},
                              protocol_buffers = Buffers,
                              protocol_specific = PS,
                              handshake_env = HsEnv} = State) ->
-    State#state{handshake_env = HsEnv#handshake_env{tls_handshake_history = ssl_handshake:init_handshake_history(),
+    State#state{handshake_env = HsEnv#handshake_env{tls_handshake_history = xssl_handshake:init_handshake_history(),
                                                     public_key_info = undefined,
                                                     premaster_secret = undefined,
                                                     flight_buffer = new_flight()},
@@ -630,7 +630,7 @@ send_alert(Alert, #state{static_env = #static_env{socket = Socket,
     {BinMsg, ConnectionStates} =
 	encode_alert(Alert, Version, ConnectionStates0),
     send(Transport, Socket, BinMsg),
-    ssl_logger:debug(LogLevel, outbound, 'record', BinMsg),
+    xssl_logger:debug(LogLevel, outbound, 'record', BinMsg),
     State0#state{connection_states = ConnectionStates}.
 
 send_alert_in_connection(Alert, State) ->
@@ -687,7 +687,7 @@ send_application_data(Data, From, StateName,
             State = State0#state{connection_states = ConnectionStates},
 	    case send_msgs(Transport, Socket, Msgs) of
                 ok ->
-                    ssl_logger:debug(LogLevel, outbound, 'record', Msgs),
+                    xssl_logger:debug(LogLevel, outbound, 'record', Msgs),
                     xssl_gen_statem:hibernate_after(connection, State, [{reply, From, ok}]);
                 Result ->
                     xssl_gen_statem:hibernate_after(connection, State, [{reply, From, Result}])
@@ -805,7 +805,7 @@ handle_info({CloseTag, Socket}, StateName,
 
 handle_info(new_cookie_secret, StateName, 
             #state{protocol_specific = #{current_cookie_secret := Secret} = CookieInfo} = State) ->
-    erlang:send_after(dtls_v1:cookie_timeout(), self(), new_cookie_secret),
+    erlang:send_after(xdtls_v1:cookie_timeout(), self(), new_cookie_secret),
     {next_state, StateName, State#state{protocol_specific = 
                                             CookieInfo#{current_cookie_secret => xdtls_v1:cookie_secret(),
                                                         previous_cookie_secret => Secret}}};
@@ -861,7 +861,7 @@ encode_change_cipher(#change_cipher_spec{}, Version, Epoch, ConnectionStates) ->
 update_handshake_history(#hello_verify_request{}, _, Hist) ->
     Hist;
 update_handshake_history(_, Handshake, Hist) ->
-    ssl_handshake:update_handshake_history(Hist, iolist_to_binary(Handshake)).
+    xssl_handshake:update_handshake_history(Hist, iolist_to_binary(Handshake)).
 
 next_dtls_record(Data, StateName, #state{protocol_buffers = #protocol_buffers{
 						   dtls_record_buffer = Buf0,
@@ -871,7 +871,7 @@ next_dtls_record(Data, StateName, #state{protocol_buffers = #protocol_buffers{
                                          ssl_options = SslOpts} = State0) ->
     case xdtls_record:get_dtls_records(Data,
                                       {DataTag, StateName, Version, 
-                                       [dtls_record:protocol_version_name(Vsn) || Vsn <- ?ALL_AVAILABLE_DATAGRAM_VERSIONS]},
+                                       [xdtls_record:protocol_version_name(Vsn) || Vsn <- ?ALL_AVAILABLE_DATAGRAM_VERSIONS]},
                                       Buf0, SslOpts) of
 	{Records, Buf1} ->
 	    CT1 = CT0 ++ Records,
@@ -969,7 +969,7 @@ is_ignore_alert(_) ->
     false.
 
 log_ignore_alert(Level, StateName, #alert{where = Location} = Alert, Role) ->
-    ssl_logger:log(info, 
+    xssl_logger:log(info, 
                    Level, #{alert => Alert, 
                             alerter => ignored,
                             statename => StateName,

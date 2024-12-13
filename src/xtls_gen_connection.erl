@@ -186,8 +186,8 @@ queue_handshake(Handshake, #state{handshake_env =
 				  connection_states = ConnectionStates0} = State0) ->
     {BinHandshake, ConnectionStates, Hist} =
 	encode_handshake(Handshake, Version, ConnectionStates0, Hist0),
-    ssl_logger:debug(LogLevel, outbound, 'handshake', Handshake),
-    ssl_logger:debug(LogLevel, outbound, 'record', BinHandshake),
+    xssl_logger:debug(LogLevel, outbound, 'handshake', Handshake),
+    xssl_logger:debug(LogLevel, outbound, 'record', BinHandshake),
 
     HsEnv = HsEnv0#handshake_env{tls_handshake_history = Hist,
                                  flight_buffer = [Flight0, BinHandshake]},
@@ -211,7 +211,7 @@ queue_change_cipher(Msg, #state{connection_env = #connection_env{negotiated_vers
                                 connection_states = ConnectionStates0} = State0) ->
     {BinChangeCipher, ConnectionStates} =
 	encode_change_cipher(Msg, Version, ConnectionStates0),
-    ssl_logger:debug(LogLevel, outbound, 'record', BinChangeCipher),
+    xssl_logger:debug(LogLevel, outbound, 'record', BinChangeCipher),
     HsEnv = HsEnv0#handshake_env{flight_buffer = [Flight0, BinChangeCipher]},
     State0#state{connection_states = ConnectionStates, handshake_env = HsEnv}.
 
@@ -229,7 +229,7 @@ reinit_handshake_data(#state{handshake_env = HsEnv} =State) ->
     %% To reduce memory foot print of a connection reinitialize them.
      State#state{
        handshake_env = HsEnv#handshake_env{tls_handshake_history =
-                                               ssl_handshake:init_handshake_history(),
+                                               xssl_handshake:init_handshake_history(),
                                            public_key_info = undefined,
                                            premaster_secret = undefined}
      }.
@@ -266,7 +266,10 @@ gen_info(Event, StateName, State) ->
     try
         handle_info(Event, StateName, State)
     catch
-        _:Reason:ST ->
+        _:Reason:ST  ->
+            erlang:display("ERROR BAD"),
+            io:format("~20p~n", [Reason]),
+            io:format("~20p~n", [ST]),
             ?SSL_LOG(info, handshake_error, [{error, Reason}, {stacktrace, ST}]),
 	    xssl_gen_statem:handle_own_alert(?ALERT_REC(?FATAL, ?HANDSHAKE_FAILURE,
 						       malformed_handshake_data),
@@ -510,7 +513,7 @@ send_alert(Alert, #state{static_env = #static_env{socket = Socket,
     {BinMsg, ConnectionStates} =
         encode_alert(Alert, Version, ConnectionStates0),
     xtls_socket:send(Transport, Socket, BinMsg),
-    ssl_logger:debug(LogLevel, outbound, 'record', BinMsg),
+    xssl_logger:debug(LogLevel, outbound, 'record', BinMsg),
     StateData0#state{connection_states = ConnectionStates}.
 
 available_version(undefined, Versions) ->
@@ -605,7 +608,7 @@ unprocessed_events(Events) ->
 
 encode_handshake(Handshake, Version, ConnectionStates0, Hist0) ->
     Frag = xtls_handshake:encode_handshake(Handshake, Version),
-    Hist = ssl_handshake:update_handshake_history(Hist0, Frag),
+    Hist = xssl_handshake:update_handshake_history(Hist0, Frag),
     {Encoded, ConnectionStates} =
         xtls_record:encode_handshake(Frag, Version, ConnectionStates0),
     {Encoded, ConnectionStates, Hist}.
@@ -637,7 +640,7 @@ next_tls_record(Data, StateName,
                 %% This does not allow SSL-3.0 connections, that we do not support
                 %% or interfere with TLS-1.3 extensions to handle version negotiation.
                 AllHelloVersions = [ 'sslv3' | ?ALL_AVAILABLE_VERSIONS],
-                [tls_record:protocol_version_name(Vsn) || Vsn <- AllHelloVersions];
+                [xtls_record:protocol_version_name(Vsn) || Vsn <- AllHelloVersions];
            true ->
                 Vsns0
         end,

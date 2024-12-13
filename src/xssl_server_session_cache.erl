@@ -141,7 +141,7 @@ handle_call({reuse_session, SessionId}, _From,  #state{store_cb = Cb,
         undefined ->
             {reply, not_reusable, State0};
         #session{internal_id = InId} = Session ->
-            case ssl_session:valid_session(Session, Lifetime) of
+            case xssl_session:valid_session(Session, Lifetime) of
                 true ->
                     {reply, Session, State0};
                 false ->
@@ -173,7 +173,7 @@ handle_cast({register_session, #session{session_id = SessionId, time_stamp = Tim
                 Size when Size > 0 ->
                     {_, OldSessId, Order1} = gb_trees:take_smallest(Order0),
                     OldestSession = lookup(Cb, Store0, OldSessId),
-                    case ssl_session:valid_session(OldestSession, Lifetime) of
+                    case xssl_session:valid_session(OldestSession, Lifetime) of
                         true ->
                             Store = update(Cb, Store0, SessionId, Session#session{time_stamp = TimeStamp}),
                             State0#state{db = Store,

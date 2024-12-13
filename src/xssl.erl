@@ -4890,7 +4890,7 @@ warn_override(new, UserOpts, NewOpt, OldOpts, LogLevel) ->
         Ignored ->
             Desc = lists:flatten(io_lib:format("Options ~w are ignored", [Ignored])),
             Reas = lists:flatten(io_lib:format("Option ~w is set", [NewOpt])),
-            ssl_logger:log(notice, LogLevel, #{description => Desc, reason => Reas}, ?LOCATION)
+            xssl_logger:log(notice, LogLevel, #{description => Desc, reason => Reas}, ?LOCATION)
     end;
 warn_override(_, _UserOpts, _NewOpt, _OldOpts, _LogLevel) ->
     ok.

@@ -103,7 +103,7 @@ abbreviated(internal, #finished{verify_data = Data} = Finished,
 		State0) ->
     #{security_parameters := SecParams} =
         xssl_record:current_connection_state(ConnectionStates0, write),
-    case ssl_handshake:verify_connection(xssl:tls_version(Version), Finished, client,
+    case xssl_handshake:verify_connection(xssl:tls_version(Version), Finished, client,
                                          SecParams#security_parameters.prf_algorithm,
 					 MasterSecret, Hist) of
         verified ->
@@ -178,7 +178,7 @@ certify(internal, #certificate{asn1_certificates = DerCerts},
                                      {failed_to_decode_certificate, Asn1Reason}))
             end,
     ExtInfo = ext_info(StaplingState, Opts, hd(Certs)),
-    case ssl_handshake:certify(Certs, CertDbHandle, CertDbRef,
+    case xssl_handshake:certify(Certs, CertDbHandle, CertDbRef,
                                Opts, CRLDbInfo, Role, Host,
                                xssl:tls_version(Version),
                                ExtInfo) of
@@ -200,7 +200,7 @@ certify(internal, #client_key_exchange{exchange_keys = Keys},
                        static_env = #static_env{protocol_cb = Connection},
                        connection_env = #connection_env{negotiated_version = Version}}) ->
     try
-	certify_client_key_exchange(ssl_handshake:decode_client_key(Keys, KeyAlg,
+	certify_client_key_exchange(xssl_handshake:decode_client_key(Keys, KeyAlg,
                                                                     xssl:tls_version(Version)),
 				    State, Connection)
     catch
@@ -231,7 +231,7 @@ wait_cert_verify(internal, #certificate_verify{signature = Signature,
     %% Use negotiated value if TLS-1.2 otherwise return default
     HashSign = xtls_xdtls_gen_connection:negotiated_hashsign(CertHashSign, KexAlg,
                                                            PubKeyInfo, TLSVersion),
-    case ssl_handshake:certificate_verify(Signature, PubKeyInfo,
+    case xssl_handshake:certificate_verify(Signature, PubKeyInfo,
 					  TLSVersion, HashSign, MasterSecret, Hist) of
 	valid ->
             HsEnv = HsEnv0#handshake_env{client_certificate_status = verified},
@@ -278,7 +278,7 @@ cipher(internal, #finished{verify_data = Data} = Finished,
 	      connection_states = ConnectionStates0} = State0) ->
     #{security_parameters := SecParams} =
         xssl_record:current_connection_state(ConnectionStates0, read),
-    case ssl_handshake:verify_connection(xssl:tls_version(Version), Finished,
+    case xssl_handshake:verify_connection(xssl:tls_version(Version), Finished,
 					 xssl_gen_statem:opposite_role(Role),
 					 SecParams#security_parameters.prf_algorithm,
 					 MasterSecret, Hist) of
@@ -356,7 +356,7 @@ do_server_hello(Type, #{next_protocol_negotiation := NextProtocols} =
     ConnectionStates1 = update_server_random(ConnectionStates0, Version, HighestVersion),
     State1 = State0#state{connection_states = ConnectionStates1},
     ServerHello =
-	ssl_handshake:server_hello(SessId, xssl:tls_version(Version),
+	xssl_handshake:server_hello(SessId, xssl:tls_version(Version),
                                    ConnectionStates1, ServerHelloExt),
 
     State = server_hello(ServerHello,
@@ -441,7 +441,7 @@ resumed_server_hello(#state{session = Session,
 			    connection_env = #connection_env{negotiated_version = Version}} =
                          State0, Connection) ->
 
-    case ssl_handshake:master_secret(xssl:tls_version(Version), Session,
+    case xssl_handshake:master_secret(xssl:tls_version(Version), Session,
 				     ConnectionStates0, server) of
 	{_, ConnectionStates1} ->
 	    State1 = State0#state{connection_states = ConnectionStates1,
@@ -460,7 +460,7 @@ server_hello(ServerHello, State0, Connection) ->
     State#state{handshake_env = HsEnv#handshake_env{kex_algorithm = KeyAlgorithm}}.
 
 server_hello_done(State, Connection) ->
-    HelloDone = ssl_handshake:server_hello_done(),
+    HelloDone = xssl_handshake:server_hello_done(),
     Connection:send_handshake(HelloDone, State).
 
 server_certify_and_key_exchange(State0, Connection) ->
@@ -479,7 +479,7 @@ certify_server(#state{handshake_env = #handshake_env{kex_algorithm = KexAlg}} =
 certify_server(#state{static_env = #static_env{cert_db = CertDbHandle,
                                                cert_db_ref = CertDbRef},
 		      session = #session{own_certificates = OwnCerts}} = State, Connection) ->
-    Cert = ssl_handshake:certificate(OwnCerts, CertDbHandle, CertDbRef, server),
+    Cert = xssl_handshake:certificate(OwnCerts, CertDbHandle, CertDbRef, server),
     #certificate{} = Cert,  %% Assert
     Connection:queue_handshake(Cert, State).
 
@@ -500,7 +500,7 @@ key_exchange(#state{handshake_env = #handshake_env{kex_algorithm = KexAlg,
 	xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
-    Msg = ssl_handshake:key_exchange(server, xssl:tls_version(Version), {dh, DHKeys, Params,
+    Msg = xssl_handshake:key_exchange(server, xssl:tls_version(Version), {dh, DHKeys, Params,
 					       HashSignAlgo, ClientRandom,
 					       ServerRandom,
 					       PrivateKey}),
@@ -527,7 +527,7 @@ key_exchange(#state{handshake_env = #handshake_env{kex_algorithm = KexAlg,
 	xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
-    Msg =  ssl_handshake:key_exchange(server, xssl:tls_version(Version),
+    Msg =  xssl_handshake:key_exchange(server, xssl:tls_version(Version),
 				      {ecdh, ECDHKeys,
 				       HashSignAlgo, ClientRandom,
 				       ServerRandom,
@@ -547,7 +547,7 @@ key_exchange(#state{ssl_options = #{psk_identity := PskIdentityHint},
 	xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
-    Msg = ssl_handshake:key_exchange(server, xssl:tls_version(Version),
+    Msg = xssl_handshake:key_exchange(server, xssl:tls_version(Version),
 				     {psk, PskIdentityHint,
 				      HashSignAlgo, ClientRandom,
 				      ServerRandom,
@@ -567,7 +567,7 @@ key_exchange(#state{ssl_options = #{psk_identity := PskIdentityHint},
 	xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
-    Msg =  ssl_handshake:key_exchange(server, xssl:tls_version(Version),
+    Msg =  xssl_handshake:key_exchange(server, xssl:tls_version(Version),
 				      {dhe_psk,
 				       PskIdentityHint, DHKeys, Params,
 				       HashSignAlgo, ClientRandom,
@@ -588,7 +588,7 @@ key_exchange(#state{ssl_options = #{psk_identity := PskIdentityHint},
 	xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
-    Msg =  ssl_handshake:key_exchange(server, xssl:tls_version(Version),
+    Msg =  xssl_handshake:key_exchange(server, xssl:tls_version(Version),
 				      {ecdhe_psk,
 				       PskIdentityHint, ECDHKeys,
 				       HashSignAlgo, ClientRandom,
@@ -610,7 +610,7 @@ key_exchange(#state{ssl_options = #{psk_identity := PskIdentityHint},
 	xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
-    Msg =  ssl_handshake:key_exchange(server, xssl:tls_version(Version),
+    Msg =  xssl_handshake:key_exchange(server, xssl:tls_version(Version),
 				      {psk, PskIdentityHint,
 				       HashSignAlgo, ClientRandom,
 				       ServerRandom,
@@ -632,7 +632,7 @@ key_exchange(#state{ssl_options = #{user_lookup_fun := LookupFun},
 	xssl_record:pending_connection_state(ConnectionStates0, read),
     #security_parameters{client_random = ClientRandom,
 			 server_random = ServerRandom} = SecParams,
-    Msg =  ssl_handshake:key_exchange(server, xssl:tls_version(Version),
+    Msg =  xssl_handshake:key_exchange(server, xssl:tls_version(Version),
 				      {srp, Keys, SrpParams,
 				       HashSignAlgo, ClientRandom,
 				       ServerRandom,
@@ -658,10 +658,10 @@ request_client_cert(#state{static_env = #static_env{cert_db = CertDbHandle,
                            ssl_options = #{verify := verify_peer} = Opts} = State0, Connection) ->
     SupportedHashSigns = maps:get(signature_algs, Opts, undefined),
     TLSVersion =  xssl:tls_version(Version),
-    HashSigns = ssl_handshake:available_signature_algs(SupportedHashSigns,
+    HashSigns = xssl_handshake:available_signature_algs(SupportedHashSigns,
 						       TLSVersion),
     IncludeCertAuths = maps:get(certificate_authorities, Opts, true),
-    Msg = ssl_handshake:certificate_request(CertDbHandle, CertDbRef,
+    Msg = xssl_handshake:certificate_request(CertDbHandle, CertDbRef,
 					    HashSigns, TLSVersion, IncludeCertAuths),
     #state{handshake_env = HsEnv0} = State = Connection:queue_handshake(Msg, State0),
     HsEnv = HsEnv0#handshake_env{client_certificate_status = requested},
@@ -683,7 +683,7 @@ certify_client_key_exchange(#encrypted_premaster_secret{premaster_secret= EncPMS
     %% Countermeasure for Bleichenbacher attack always provide some kind of premaster secret
     %% and fail handshake later.RFC 5246 section 7.4.7.1.
     PremasterSecret =
-        try ssl_handshake:premaster_secret(EncPMS, PrivateKey) of
+        try xssl_handshake:premaster_secret(EncPMS, PrivateKey) of
             Secret when erlang:byte_size(Secret) == ?NUM_OF_PREMASTERSECRET_BYTES ->
                 case Secret of
                     <<?BYTE(Major), ?BYTE(Minor), Rest/binary>> -> %% Correct
@@ -707,7 +707,7 @@ certify_client_key_exchange(#client_diffie_hellman_public{dh_public = ClientPubl
                                                       client_certificate_status = CCStatus}
 				  } = State,
 			    Connection) ->
-    PremasterSecret = ssl_handshake:premaster_secret(ClientPublicDhKey,
+    PremasterSecret = xssl_handshake:premaster_secret(ClientPublicDhKey,
                                                      ServerDhPrivateKey, Params),
     xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State,
                                                     Connection, certify,
@@ -719,7 +719,7 @@ certify_client_key_exchange(#client_ec_diffie_hellman_public{dh_public = ClientP
                                                       client_certificate_status = CCStatus}
                                   } = State, Connection) ->
     PremasterSecret =
-        ssl_handshake:premaster_secret(#'ECPoint'{point = ClientPublicEcDhPoint}, ECDHKey),
+        xssl_handshake:premaster_secret(#'ECPoint'{point = ClientPublicEcDhPoint}, ECDHKey),
     xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State,
                                                     Connection, certify,
                                                     client_kex_next_state(CCStatus));
@@ -730,7 +730,7 @@ certify_client_key_exchange(#client_psk_identity{} = ClientKey,
                                        #handshake_env{client_certificate_status = CCStatus}
                                   } = State0,
 			    Connection) ->
-    PremasterSecret = ssl_handshake:premaster_secret(ClientKey, PSKLookup),
+    PremasterSecret = xssl_handshake:premaster_secret(ClientKey, PSKLookup),
     xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State0,
                                                     Connection, certify,
                                                     client_kex_next_state(CCStatus));
@@ -746,7 +746,7 @@ certify_client_key_exchange(#client_dhe_psk_identity{} = ClientKey,
                                   } = State0,
 			    Connection) ->
     PremasterSecret =
-	ssl_handshake:premaster_secret(ClientKey, ServerDhPrivateKey, Params, PSKLookup),
+	xssl_handshake:premaster_secret(ClientKey, ServerDhPrivateKey, Params, PSKLookup),
     xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State0,
                                                     Connection, certify,
                                                     client_kex_next_state(CCStatus));
@@ -758,7 +758,7 @@ certify_client_key_exchange(#client_ecdhe_psk_identity{} = ClientKey,
                                   } = State,
 			    Connection) ->
     PremasterSecret =
-	ssl_handshake:premaster_secret(ClientKey, ServerEcDhPrivateKey, PSKLookup),
+	xssl_handshake:premaster_secret(ClientKey, ServerEcDhPrivateKey, PSKLookup),
     xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State,
                                                     Connection, certify,
                                                     client_kex_next_state(CCStatus));
@@ -770,7 +770,7 @@ certify_client_key_exchange(#client_rsa_psk_identity{} = ClientKey,
                                        #handshake_env{client_certificate_status = CCStatus}
                                   } = State0,
 			    Connection) ->
-    PremasterSecret = ssl_handshake:premaster_secret(ClientKey, PrivateKey, PSKLookup),
+    PremasterSecret = xssl_handshake:premaster_secret(ClientKey, PrivateKey, PSKLookup),
     xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State0,
                                                     Connection, certify,
                                                     client_kex_next_state(CCStatus));
@@ -780,7 +780,7 @@ certify_client_key_exchange(#client_srp_public{} = ClientKey,
                                                       kex_keys = Key,
                                                       client_certificate_status = CCStatus}
 				  } = State0, Connection) ->
-    PremasterSecret = ssl_handshake:premaster_secret(ClientKey, Key, Params),
+    PremasterSecret = xssl_handshake:premaster_secret(ClientKey, Key, Params),
     xtls_xdtls_gen_connection:calculate_master_secret(PremasterSecret, State0,
                                                     Connection, certify,
                                                     client_kex_next_state(CCStatus)).

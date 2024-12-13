@@ -169,11 +169,11 @@
                     undefined ->
                         %% Use debug here, i.e. log everything and let loggers
                         %% log_level decide if it should be logged
-                        ssl_logger:log(Level, debug,
+                        xssl_logger:log(Level, debug,
                                        #{description => Descr, reason => Reason},
                                        ?LOCATION);
                     __LogLevel__ ->
-                        ssl_logger:log(Level, __LogLevel__,
+                        xssl_logger:log(Level, __LogLevel__,
                                        #{description => Descr, reason => Reason},
                                        ?LOCATION)
                 end

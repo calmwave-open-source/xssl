@@ -252,7 +252,7 @@ ssl_config(Opts, Role, #state{static_env = InitStatEnv0,
            crl_db_info := CRLDbHandle,
            cert_key_alts := CertKeyAlts,
            dh_params := DHParams}} =
-	ssl_config:init(Opts, Role),
+	xssl_config:init(Opts, Role),
     TimeStamp = erlang:monotonic_time(),
     Session = State0#state.session,
 
@@ -753,7 +753,7 @@ downgrade(Type, Event, State) ->
 handle_common_event(internal, {handshake, {Handshake, Raw}}, StateName,
 		    #state{handshake_env = #handshake_env{tls_handshake_history = Hist0} = HsEnv,
                            connection_env = #connection_env{negotiated_version = _Version}} = State0) ->
-    Hist = ssl_handshake:update_handshake_history(Hist0, Raw),
+    Hist = xssl_handshake:update_handshake_history(Hist0, Raw),
     {next_state, StateName,
      State0#state{handshake_env =
                       HsEnv#handshake_env{tls_handshake_history = Hist}},
@@ -1394,7 +1394,7 @@ ack_connection(State) ->
 
 no_records(Extensions) ->
     maps:map(fun(_, Value) ->
-                     ssl_handshake:extension_value(Value)
+                     xssl_handshake:extension_value(Value)
              end, Extensions).
 
 handle_active_option(false, connection = StateName, To, Reply, State) ->
@@ -1834,13 +1834,13 @@ alert_user(UserSocket, Active, Pid, From, Alert, Role, StateName, Connection) ->
     end.
 
 log_alert(Level, Role, ProtocolName, StateName, #alert{role = Role} = Alert) ->
-    ssl_logger:log(notice, Level, #{protocol => ProtocolName,
+    xssl_logger:log(notice, Level, #{protocol => ProtocolName,
                                     role => Role,
                                     statename => StateName,
                                     alert => Alert,
                                     alerter => own}, Alert#alert.where);
 log_alert(Level, Role, ProtocolName, StateName,  Alert) ->
-    ssl_logger:log(notice, Level, #{protocol => ProtocolName,
+    xssl_logger:log(notice, Level, #{protocol => ProtocolName,
                                     role => Role,
                                     statename => StateName,
                                     alert => Alert,

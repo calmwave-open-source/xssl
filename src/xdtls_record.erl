@@ -423,7 +423,7 @@ get_dtls_records_aux({DataTag, StateName, _, Versions} = Vinfo,
         orelse ((StateName == certify) andalso (DataTag == udp))
         orelse ((StateName == abbreviated) andalso (DataTag == udp)))
        andalso ((Type == ?HANDSHAKE) orelse (Type == ?ALERT)) ->
-    ssl_logger:debug(LogLevel, inbound, 'record', [RawDTLSRecord]),
+    xssl_logger:debug(LogLevel, inbound, 'record', [RawDTLSRecord]),
     Version = {MajVer,MinVer},
     Acc = [#ssl_tls{type = Type, version = Version,
                     epoch = Epoch, sequence_number = SequenceNumber,
@@ -443,7 +443,7 @@ get_dtls_records_aux({_, _, Version, Versions} = Vinfo,
        (Type == ?HANDSHAKE) orelse
        (Type == ?ALERT) orelse
        (Type == ?CHANGE_CIPHER_SPEC) ->
-    ssl_logger:debug(LogLevel, inbound, 'record', [RawDTLSRecord]),
+    xssl_logger:debug(LogLevel, inbound, 'record', [RawDTLSRecord]),
     Version1 = {MajVer,MinVer},
     Acc = [#ssl_tls{type = Type, version = Version,
                     epoch = Epoch, sequence_number = SequenceNumber,
@@ -585,7 +585,7 @@ decode_cipher_text(#ssl_tls{type = Type, version = Version,
 			    fragment = CipherFragment} = CipherText,
 		   ReadState0,
 		   ConnnectionStates0) ->
-    {PlainFragment, Mac, ReadState1} = xssl_record:decipher(dtls_v1:corresponding_tls_version(Version),
+    {PlainFragment, Mac, ReadState1} = xssl_record:decipher(xdtls_v1:corresponding_tls_version(Version),
 							   CipherFragment, ReadState0, true),
     MacHash = calc_mac_hash(Type, Version, ReadState1, Epoch, Seq, PlainFragment),
     case xssl_record:is_correct_mac(Mac, MacHash) of

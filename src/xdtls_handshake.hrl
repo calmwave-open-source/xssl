@@ -52,6 +52,6 @@
 %% RFC 5764  Datagram Transport Layer Security (DTLS) Extension to Establish Keys
 %% for the Secure Real-time Transport Protocol (SRTP)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Defined in ssl_handshake.hrl because extension parsing code is in ssl_handshake.erl
+%% Defined in xssl_handshake.hrl because extension parsing code is in xssl_handshake.erl
 
 -endif. % -ifdef(dtls_handshake).

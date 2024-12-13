@@ -151,7 +151,7 @@ init([Role, Sender, Tab, Host, Port, Socket, Options,  User, CbInfo]) ->
                         session = Session0} =
             xssl_gen_statem:init_ssl_config(State0#state.ssl_options, Role, State0),
         CertKeyPairs = xssl_certificate:available_cert_key_pairs(CertKeyAlts),
-        Session = ssl_session:client_select_session({Host, Port, SslOptions}, Cache,
+        Session = xssl_session:client_select_session({Host, Port, SslOptions}, Cache,
                                                     CacheCb, Session0, CertKeyPairs),
         State = State1#state{session = Session},
         xtls_gen_connection:initialize_tls_sender(State),
@@ -233,7 +233,7 @@ initial_hello({call, From}, {start, Timeout},
     {Ref,Maybe} = xtls_gen_connection_1_3:do_maybe(),
     try
         %% Send Early Data
-        State4 = Maybe(tls_client_connection_1_3:maybe_send_early_data(State3)),
+        State4 = Maybe(xtls_client_connection_1_3:maybe_send_early_data(State3)),
 
         {#state{handshake_env = HsEnv1} = State5, _} =
             Connection:send_handshake_flight(State4),
@@ -407,7 +407,7 @@ connection(internal, #hello_request{},
     try xtls_sender:peer_renegotiate(Pid) of
         {ok, Write} ->
             CertKeyPairs = xssl_certificate:available_cert_key_pairs(CertKeyAlts),
-            Session = ssl_session:client_select_session({Host, Port, SslOpts}, Cache,
+            Session = xssl_session:client_select_session({Host, Port, SslOpts}, Cache,
                                                         CacheCb, Session0, CertKeyPairs),
             Hello = xtls_handshake:client_hello(Host, Port, ConnectionStates, SslOpts,
                                                Session#session.session_id,

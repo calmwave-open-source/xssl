@@ -125,7 +125,7 @@ handle_peer_cert_key(client,
                                     session = Session} = State)  when KeyAlg == ecdh_rsa;
                                                                       KeyAlg == ecdh_ecdsa ->
     ECDHKey = public_key:generate_key(PublicKeyParams),
-    PremasterSecret = ssl_handshake:premaster_secret(PublicKey, ECDHKey),
+    PremasterSecret = xssl_handshake:premaster_secret(PublicKey, ECDHKey),
     master_secret(PremasterSecret, State#state{handshake_env = HsEnv#handshake_env{kex_keys = ECDHKey},
                                                session = Session#session{ecc = PublicKeyParams}});
 handle_peer_cert_key(_, _, _, State) ->
@@ -172,7 +172,7 @@ initial_state(Role, Sender, Tab, Host, Port, Socket, {SSLOptions, SocketOptions,
        tab = Tab,
        static_env = InitStatEnv,
        handshake_env = #handshake_env{
-                          tls_handshake_history = ssl_handshake:init_handshake_history(),
+                          tls_handshake_history = xssl_handshake:init_handshake_history(),
                           renegotiation = {false, first},
                           allow_renegotiate = maps:get(client_renegotiation, SSLOptions, undefined),
                           flight_buffer = []
@@ -199,7 +199,7 @@ negotiated_hashsign(undefined, KexAlg, PubKeyInfo, Version) ->
 	    {null, anon};
 	false ->
 	    {PubAlg, _, _} = PubKeyInfo,
-	    ssl_handshake:select_hashsign_algs(undefined, PubAlg, Version)
+	    xssl_handshake:select_hashsign_algs(undefined, PubAlg, Version)
     end;
 negotiated_hashsign(HashSign = {_, _}, _, _, _) ->
     HashSign.
@@ -222,7 +222,7 @@ calculate_master_secret(PremasterSecret,
                                    #connection_env{negotiated_version = Version},
                                session = Session,
                                connection_states = ConnectionStates0} = State) ->
-    case ssl_handshake:master_secret(xssl:tls_version(Version), PremasterSecret,
+    case xssl_handshake:master_secret(xssl:tls_version(Version), PremasterSecret,
                                     ConnectionStates0, Role) of
        {MasterSecret, ConnectionStates} ->
            State#state{
@@ -424,7 +424,7 @@ next_protocol(#state{handshake_env = #handshake_env{negotiated_protocol = undefi
 next_protocol(#state{handshake_env = #handshake_env{expecting_next_protocol_negotiation = false}} = State, _) ->
     State;
 next_protocol(#state{handshake_env = #handshake_env{negotiated_protocol = NextProtocol}} = State0, Connection) ->
-    NextProtocolMessage = ssl_handshake:next_protocol(NextProtocol),
+    NextProtocolMessage = xssl_handshake:next_protocol(NextProtocol),
     Connection:queue_handshake(NextProtocolMessage, State0).
 
 cipher_protocol(State, Connection) ->
@@ -438,7 +438,7 @@ finished(#state{static_env = #static_env{role = Role},
          StateName, Connection) ->
     MasterSecret = Session#session.master_secret,
     #{security_parameters := SecParams} = xssl_record:current_connection_state(ConnectionStates0, write),
-    Finished = ssl_handshake:finished(xssl:tls_version(Version), Role,
+    Finished = xssl_handshake:finished(xssl:tls_version(Version), Role,
                                       SecParams#security_parameters.prf_algorithm,
                                       MasterSecret, Hist),
     ConnectionStates = save_verify_data(Role, Finished, ConnectionStates0, StateName),
@@ -458,7 +458,7 @@ master_secret(PremasterSecret, #state{static_env = #static_env{role = Role},
                                       connection_env = #connection_env{negotiated_version = Version},
                                       session = Session,
 				      connection_states = ConnectionStates0} = State) ->
-    case ssl_handshake:master_secret(xssl:tls_version(Version), PremasterSecret,
+    case xssl_handshake:master_secret(xssl:tls_version(Version), PremasterSecret,
 				     ConnectionStates0, Role) of
 	{MasterSecret, ConnectionStates} ->
 	    State#state{

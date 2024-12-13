@@ -34,17 +34,17 @@
 -include("xtls_handshake_1_3.hrl").
 -include_lib("public_key/include/public_key.hrl").
 
--export_type([ssl_handshake/0,
-              ssl_handshake_history/0,
+-export_type([xssl_handshake/0,
+              xssl_handshake_history/0,
 	      public_key_info/0,
               oid/0]).
 
 -type oid()               :: tuple().
 -type public_key_params() :: #'Dss-Parms'{} |  {namedCurve, oid()} | #'ECParameters'{} | term().
 -type public_key_info()   :: {oid(), #'RSAPublicKey'{} | integer() | #'ECPoint'{}, public_key_params()}.
--type ssl_handshake_history() :: {iodata(), iodata()}.
+-type xssl_handshake_history() :: {iodata(), iodata()}.
 
--type ssl_handshake() :: #server_hello{} | #server_hello_done{} | #certificate{} | #certificate_request{} |
+-type xssl_handshake() :: #server_hello{} | #server_hello_done{} | #certificate{} | #certificate_request{} |
 			 #client_key_exchange{} | #finished{} | #certificate_verify{} |
 			 #hello_request{} | #next_protocol{} | #end_of_early_data{}.
 
@@ -195,7 +195,7 @@ certificate([_, _ |_] = Chain, _, _, _) ->
 %%--------------------------------------------------------------------
 -spec client_certificate_verify([public_key:der_encoded()], binary(),
 				xssl_record:ssl_version(), term(), public_key:private_key(),
-				ssl_handshake_history()) ->
+				xssl_handshake_history()) ->
     #certificate_verify{} | ignore | #alert{}.
 %%
 %% Description: Creates a certificate_verify message, called by the client.
@@ -364,7 +364,7 @@ key_exchange(server, Version, {srp, {PublicKey, _},
 			    ClientRandom, ServerRandom, PrivateKey).
 
 %%--------------------------------------------------------------------
--spec finished(xssl_record:ssl_version(), client | server, integer(), binary(), ssl_handshake_history()) ->
+-spec finished(xssl_record:ssl_version(), client | server, integer(), binary(), xssl_handshake_history()) ->
     #finished{}.
 %%
 %% Description: Creates a handshake finished message
@@ -413,7 +413,7 @@ certify(Certs, CertDbHandle, CertDbRef,
     end.
 %%--------------------------------------------------------------------
 -spec certificate_verify(binary(), public_key_info(), xssl_record:ssl_version(), term(),
-			 binary(), ssl_handshake_history()) -> valid | #alert{}.
+			 binary(), xssl_handshake_history()) -> valid | #alert{}.
 %%
 %% Description: Checks that the certificate_verify message is valid.
 %%--------------------------------------------------------------------
@@ -518,7 +518,7 @@ server_key_exchange_hash(_, Value) ->
 
 %%--------------------------------------------------------------------
 -spec verify_connection(xssl_record:ssl_version(), #finished{}, client | server, integer(), binary(),
-			ssl_handshake_history()) -> verified | #alert{}.
+			xssl_handshake_history()) -> verified | #alert{}.
 %%
 %% Description: Checks the ssl handshake finished message to verify
 %%              the connection.
@@ -534,7 +534,7 @@ verify_connection(Version, #finished{verify_data = Data},
     end.
 
 %%--------------------------------------------------------------------
--spec init_handshake_history() -> ssl_handshake_history().
+-spec init_handshake_history() -> xssl_handshake_history().
 
 %%
 %% Description: Initialize the empty handshake history buffer.
@@ -543,8 +543,8 @@ init_handshake_history() ->
     {[], []}.
 
 %%--------------------------------------------------------------------
--spec update_handshake_history(ssl_handshake:ssl_handshake_history(), Data ::term()) ->
-				      ssl_handshake:ssl_handshake_history().
+-spec update_handshake_history(xssl_handshake:xssl_handshake_history(), Data ::term()) ->
+				      xssl_handshake:xssl_handshake_history().
 %%
 %% Description: Update the handshake history buffer with Data.
 %%--------------------------------------------------------------------
@@ -677,14 +677,14 @@ encode_extensions([#renegotiation_info{renegotiated_connection = Info} | Rest], 
 				    Info/binary, Acc/binary>>);
 encode_extensions([#elliptic_curves{elliptic_curve_list = EllipticCurves} | Rest], Acc) ->
 
-    EllipticCurveList = << <<(tls_v1:oid_to_enum(X)):16>> || X <- EllipticCurves>>,
+    EllipticCurveList = << <<(xtls_v1:oid_to_enum(X)):16>> || X <- EllipticCurves>>,
     ListLen = byte_size(EllipticCurveList),
     Len = ListLen + 2,
     encode_extensions(Rest, <<?UINT16(?ELLIPTIC_CURVES_EXT),
 				 ?UINT16(Len), ?UINT16(ListLen), EllipticCurveList/binary, Acc/binary>>);
 encode_extensions([#supported_groups{supported_groups = SupportedGroups} | Rest], Acc) ->
 
-    SupportedGroupList = << <<(tls_v1:group_to_enum(X)):16>> || X <- SupportedGroups>>,
+    SupportedGroupList = << <<(xtls_v1:group_to_enum(X)):16>> || X <- SupportedGroups>>,
     ListLen = byte_size(SupportedGroupList),
     Len = ListLen + 2,
     encode_extensions(Rest, <<?UINT16(?ELLIPTIC_CURVES_EXT),
@@ -1103,7 +1103,7 @@ cipher_suites(Suites, true) ->
 select_session(SuggestedSessionId, CipherSuites, HashSigns, SessIdTracker, Session0,
                Version, SslOpts, CertKeyAlts) ->
     CertKeyPairs = xssl_certificate:available_cert_key_pairs(CertKeyAlts, Version),
-    {SessionId, Resumed} = ssl_session:server_select_session(Version, SessIdTracker, SuggestedSessionId,
+    {SessionId, Resumed} = xssl_session:server_select_session(Version, SessIdTracker, SuggestedSessionId,
                                                              SslOpts, CertKeyPairs),
     case Resumed of
         undefined ->
@@ -2529,7 +2529,7 @@ encode_server_key(#server_dh_params{dh_p = P, dh_g = G, dh_y = Y}) ->
 encode_server_key(#server_ecdh_params{curve = {namedCurve, ECCurve}, public = ECPubKey}) ->
     %%TODO: support arbitrary keys
     KLen = byte_size(ECPubKey),
-    <<?BYTE(?NAMED_CURVE), ?UINT16((tls_v1:oid_to_enum(ECCurve))),
+    <<?BYTE(?NAMED_CURVE), ?UINT16((xtls_v1:oid_to_enum(ECCurve))),
       ?BYTE(KLen), ECPubKey/binary>>;
 encode_server_key(#server_psk_params{hint = PskIdentityHint}) ->
     Len = byte_size(PskIdentityHint),
@@ -2555,7 +2555,7 @@ encode_server_key(#server_ecdhe_psk_params{
     Len = byte_size(PskIdentityHint),
     KLen = byte_size(ECPubKey),
     <<?UINT16(Len), PskIdentityHint/binary,
-      ?BYTE(?NAMED_CURVE), ?UINT16((tls_v1:oid_to_enum(ECCurve))),
+      ?BYTE(?NAMED_CURVE), ?UINT16((xtls_v1:oid_to_enum(ECCurve))),
       ?BYTE(KLen), ECPubKey/binary>>;
 encode_server_key(#server_srp_params{srp_n = N, srp_g = G,	srp_s = S, srp_b = B}) ->
     NLen = byte_size(N),
@@ -2668,7 +2668,7 @@ encode_client_shares(ClientShares) ->
 encode_key_share_entry(#key_share_entry{group = Group,
                                         key_exchange = KeyExchange}) ->
     Len = byte_size(KeyExchange),
-    <<?UINT16((tls_v1:group_to_enum(Group))),?UINT16(Len),KeyExchange/binary>>.
+    <<?UINT16((xtls_v1:group_to_enum(Group))),?UINT16(Len),KeyExchange/binary>>.
 
 encode_psk_key_exchange_modes(KEModes) ->
     << <<?BYTE((choose_psk_key(PskKey)))>> || PskKey <- KEModes>>.
@@ -3868,7 +3868,7 @@ empty_extensions(_, server_hello) ->
       ec_point_formats => undefined}.
 
 handle_log(Level, {LogLevel, ReportMap, Meta}) ->
-    ssl_logger:log(Level, LogLevel, ReportMap, Meta).
+    xssl_logger:log(Level, LogLevel, ReportMap, Meta).
 
 %%% Recurse over possible paths until we find a valid one
 %%% or run out of alternatives.

@@ -173,7 +173,7 @@ user_hello({call, From}, {handshake_continue, NewOptions, Timeout},
             #state{handshake_env = HsEnv0} = State1,
             HsEnv = HsEnv0#handshake_env{continue_status = continue},
             State = State1#state{recv = State1#state.recv#recv{from = From}, handshake_env = HsEnv},
-            case ssl_handshake:select_supported_version(ClientVersions, Versions) of
+            case xssl_handshake:select_supported_version(ClientVersions, Versions) of
                 ?TLS_1_3 ->
                     {next_state, start, State, [{{timeout, handshake}, Timeout, close}]};
                 undefined ->
@@ -203,7 +203,7 @@ start(enter, _, State0) ->
     {next_state, ?STATE(start), State,[]};
 start(internal = Type, #change_cipher_spec{} = Msg,
       #state{handshake_env = #handshake_env{tls_handshake_history = Hist}} = State) ->
-    case ssl_handshake:init_handshake_history() of
+    case xssl_handshake:init_handshake_history() of
         Hist -> %% First message must always be client hello
             xssl_gen_statem:handle_common_event(Type, Msg, ?STATE(start), State);
         _ ->
@@ -414,7 +414,7 @@ do_handle_client_hello(#client_hello{cipher_suites = ClientCiphers,
         OfferedPSKs = maps:get(pre_shared_key, Extensions, undefined),
 
         ClientALPN0 = maps:get(alpn, Extensions, undefined),
-        ClientALPN = ssl_handshake:decode_alpn(ClientALPN0),
+        ClientALPN = xssl_handshake:decode_alpn(ClientALPN0),
 
         ClientSignAlgs = xtls_handshake_1_3:get_signature_scheme_list(
                            maps:get(signature_algs, Extensions, undefined)),

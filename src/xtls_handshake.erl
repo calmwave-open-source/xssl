@@ -48,7 +48,7 @@
 %% Handshake helper
 -export([ocsp_nonce/1, get_signature_ext/3]).
 
--type xtls_handshake() :: #client_hello{} | ssl_handshake:ssl_handshake().
+-type xtls_handshake() :: #client_hello{} | xssl_handshake:xssl_handshake().
 
 %%====================================================================
 %% Handshake handling
@@ -84,8 +84,8 @@ client_hello(_Host, _Port, ConnectionStates,
         end,
     #{security_parameters := SecParams} =
         xssl_record:pending_connection_state(ConnectionStates, read),
-    AvailableCipherSuites = ssl_handshake:available_suites(UserSuites, Version),
-    Extensions = ssl_handshake:client_hello_extensions(Version,
+    AvailableCipherSuites = xssl_handshake:available_suites(UserSuites, Version),
+    Extensions = xssl_handshake:client_hello_extensions(Version,
 						       AvailableCipherSuites,
 						       SslOpts,
                                                        ConnectionStates,
@@ -93,7 +93,7 @@ client_hello(_Host, _Port, ConnectionStates,
                                                        KeyShare,
                                                        TicketData,
                                                        OcspNonce, CertDbHandle, CertDbRef),
-    CipherSuites = ssl_handshake:cipher_suites(AvailableCipherSuites, Renegotiation, Fallback),
+    CipherSuites = xssl_handshake:cipher_suites(AvailableCipherSuites, Renegotiation, Fallback),
     #client_hello{session_id = Id,
 		  client_version = LegacyVersion,
 		  cipher_suites = CipherSuites,
@@ -107,7 +107,7 @@ client_hello(_Host, _Port, ConnectionStates,
 				    atom(), xssl_record:connection_states(), 
 				    binary() | undefined, xssl:kex_algo()},
 	    boolean(), #session{}) ->
-          {tls_record:tls_version(), xssl:session_id(), 
+          {xtls_record:tls_version(), xssl:session_id(), 
            xssl_record:connection_states(), alpn | npn, binary() | undefined, map()}|
           {atom(), atom(), xtls_record:tls_version(), map()}.
                                                 % Otherwise Throws #alert{}
@@ -176,7 +176,7 @@ hello(#server_hello{server_version = LegacyVersion,
                 true ->
                     case Version of
                         ?TLS_1_2 ->
-                            IsNew = ssl_session:is_new(OldId, SessionId),
+                            IsNew = xssl_session:is_new(OldId, SessionId),
                             %% TLS 1.2 ServerHello with "supported_versions" (special case)
                             handle_server_hello_extensions(Version, SessionId, Random, CipherSuite,
                                                            HelloExt, SslOpt,
@@ -201,7 +201,7 @@ hello(#server_hello{server_version = Version,
                     extensions = HelloExt},
       #{versions := SupportedVersions} = SslOpt,
       ConnectionStates0, Renegotiation, OldId) ->
-    IsNew = ssl_session:is_new(OldId, SessionId),
+    IsNew = xssl_session:is_new(OldId, SessionId),
     case xtls_record:is_acceptable_version(Version, SupportedVersions) of
 	true ->
 	    handle_server_hello_extensions(Version, SessionId, Random, CipherSuite,
@@ -217,9 +217,9 @@ hello(#server_hello{server_version = Version,
 	    {pid(), #session{}, xssl_record:connection_states(),
              list(), xssl:kex_algo()},
 	    boolean()) ->
-		   {tls_record:tls_version(), xssl:session_id(), 
+		   {xtls_record:tls_version(), xssl:session_id(), 
 		    xssl_record:connection_states(), alpn | npn, binary() | undefined}|
-		   {tls_record:tls_version(), {resumed | new, #session{}}, 
+		   {xtls_record:tls_version(), {resumed | new, #session{}}, 
 		    xssl_record:connection_states(), binary() | undefined, 
                     HelloExt::map(), {xssl:hash(), xssl:sign_algo()} | 
                     undefined} | {atom(), atom()} | {atom(), atom(), tuple()}.
@@ -245,7 +245,7 @@ hello(#client_hello{client_version = _ClientVersion,
       #{versions := Versions = [Version |_]} = SslOpts,
       Info, Renegotiation) when ?TLS_GTE(Version, ?TLS_1_2)->
     try
-        SelectedVersion = ssl_handshake:select_supported_version(ClientVersions, Versions),
+        SelectedVersion = xssl_handshake:select_supported_version(ClientVersions, Versions),
         do_hello(SelectedVersion, Versions, CipherSuites, Hello, SslOpts, Info, Renegotiation)
     catch
 	error:Reason:ST ->
@@ -258,7 +258,7 @@ hello(#client_hello{client_version = ClientVersion,
       #{versions := Versions} = SslOpts,
       Info, Renegotiation) ->
     try
-	Version = ssl_handshake:select_version(xtls_record, ClientVersion, Versions),
+	Version = xssl_handshake:select_version(xtls_record, ClientVersion, Versions),
         do_hello(Version, Versions, CipherSuites, Hello, SslOpts, Info, Renegotiation)
     catch
         error:{case_clause,{asn1, Asn1Reason}} ->
@@ -335,17 +335,17 @@ handle_client_hello(Version,
                     Renegotiation) ->
     case xtls_record:is_acceptable_version(Version, Versions) of
 	true ->
-            SigAlgs = ssl_handshake:supported_hashsigns(maps:get(signature_algs, SslOpts, undefined)),
+            SigAlgs = xssl_handshake:supported_hashsigns(maps:get(signature_algs, SslOpts, undefined)),
             SigAlgsCert = signature_algs_cert(Version, SslOpts, SigAlgs),
             Curves = maps:get(elliptic_curves, HelloExt, undefined),
             ClientHashSigns = get_signature_ext(signature_algs, HelloExt, Version),
             ClientSignatureSchemes = get_signature_ext(signature_algs_cert, HelloExt, Version),
-	    AvailableHashSigns = ssl_handshake:available_signature_algs(
+	    AvailableHashSigns = xssl_handshake:available_signature_algs(
 				   ClientHashSigns, SigAlgs, Version),
-	    ECCCurve = ssl_handshake:select_curve(Curves, SupportedECCs, ECCOrder),
+	    ECCCurve = xssl_handshake:select_curve(Curves, SupportedECCs, ECCOrder),
 	    {Type, #session{cipher_suite = CipherSuite,
                             own_certificates = [OwnCert |_]} = Session1}
-		= ssl_handshake:select_session(SugesstedId, CipherSuites,
+		= xssl_handshake:select_session(SugesstedId, CipherSuites,
                                                AvailableHashSigns,
 					       SessIdTracker, Session0#session{ecc = ECCCurve},
                                                Version, SslOpts, CertKeyPairs),
@@ -354,7 +354,7 @@ handle_client_hello(Version,
                     throw(?ALERT_REC(?FATAL, ?INSUFFICIENT_SECURITY, no_suitable_ciphers));
 		_ ->
 		    #{key_exchange := KeyExAlg} = xssl_cipher_format:suite_bin_to_map(CipherSuite),
-                    case ssl_handshake:select_hashsign({ClientHashSigns, ClientSignatureSchemes},
+                    case xssl_handshake:select_hashsign({ClientHashSigns, ClientSignatureSchemes},
                                                        OwnCert, KeyExAlg,
                                                        SigAlgsCert,
                                                        Version) of
@@ -377,7 +377,7 @@ signature_algs_cert(Version, SslOpts, SigAlgs)  when ?TLS_GTE(Version, ?TLS_1_2)
         undefined ->
             SigAlgs;
         SigAlgsCert ->
-            ssl_handshake:supported_hashsigns(SigAlgsCert)
+            xssl_handshake:supported_hashsigns(SigAlgsCert)
     end;
 signature_algs_cert(_,_,_) ->
     undefined.
@@ -386,7 +386,7 @@ handle_client_hello_extensions(Version, Type, Random, CipherSuites,
                                HelloExt, SslOpts, Session0, ConnectionStates0, 
                                Renegotiation, HashSign) ->
     {Session, ConnectionStates, Protocol, ServerHelloExt} =
-        ssl_handshake:handle_client_hello_extensions(xtls_record, Random, CipherSuites,
+        xssl_handshake:handle_client_hello_extensions(xtls_record, Random, CipherSuites,
                                                      HelloExt, Version, SslOpts,
                                                      Session0, ConnectionStates0,
                                                      Renegotiation,
@@ -396,7 +396,7 @@ handle_client_hello_extensions(Version, Type, Random, CipherSuites,
 handle_server_hello_extensions(Version, SessionId, Random, CipherSuite,
                                HelloExt, SslOpt, ConnectionStates0, Renegotiation, IsNew) ->
     {ConnectionStates, ProtoExt, Protocol, StaplingState} =
-        ssl_handshake:handle_server_hello_extensions(xtls_record, Random, CipherSuite,
+        xssl_handshake:handle_server_hello_extensions(xtls_record, Random, CipherSuite,
                                                      HelloExt, Version,
                                                      SslOpt, ConnectionStates0,
                                                      Renegotiation, IsNew),
@@ -431,7 +431,7 @@ enc_handshake(#client_hello{client_version = ServerVersion,
     CmLength = byte_size(BinCompMethods),
     BinCipherSuites = list_to_binary(CipherSuites),
     CsLength = byte_size(BinCipherSuites),
-    ExtensionsBin = ssl_handshake:encode_hello_extensions(HelloExtensions),
+    ExtensionsBin = xssl_handshake:encode_hello_extensions(HelloExtensions),
     {Major,Minor} = ServerVersion,
 
     {?CLIENT_HELLO, <<?BYTE(Major), ?BYTE(Minor), Random:32/binary,
@@ -441,7 +441,7 @@ enc_handshake(#client_hello{client_version = ServerVersion,
 enc_handshake(HandshakeMsg, ?TLS_1_3) ->
     xtls_handshake_1_3:encode_handshake(HandshakeMsg);
 enc_handshake(HandshakeMsg, Version) ->
-    ssl_handshake:encode_handshake(HandshakeMsg, Version).
+    xssl_handshake:encode_handshake(HandshakeMsg, Version).
 
 %%--------------------------------------------------------------------
 get_tls_handshakes_aux(Version, <<?BYTE(Type), ?UINT24(Length),
@@ -450,7 +450,7 @@ get_tls_handshakes_aux(Version, <<?BYTE(Type), ?UINT24(Length),
     Raw = <<?BYTE(Type), ?UINT24(Length), Body/binary>>,
     try decode_handshake(Version, Type, Body) of
         Handshake ->
-            ssl_logger:debug(LogLevel, inbound, 'handshake', Handshake),
+            xssl_logger:debug(LogLevel, inbound, 'handshake', Handshake),
             get_tls_handshakes_aux(Version, Rest, Opts, [{Handshake,Raw} | Acc])
     catch
         error:Reason:ST ->
@@ -469,20 +469,20 @@ decode_handshake(Version, ?CLIENT_HELLO,
                    ?UINT16(Cs_length), CipherSuites:Cs_length/binary,
                    ?BYTE(Cm_length), _CompMethods:Cm_length/binary,
                    Extensions/binary>>) ->
-    Exts = ssl_handshake:decode_vector(Extensions),
-    DecodedExtensions = ssl_handshake:decode_hello_extensions(Exts, Version, {Major, Minor},
+    Exts = xssl_handshake:decode_vector(Extensions),
+    DecodedExtensions = xssl_handshake:decode_hello_extensions(Exts, Version, {Major, Minor},
                                                               client_hello),
     #client_hello{
        client_version = {Major,Minor},
        random = Random,
        session_id = Session_ID,
-       cipher_suites = ssl_handshake:decode_suites('2_bytes', CipherSuites),
+       cipher_suites = xssl_handshake:decode_suites('2_bytes', CipherSuites),
        extensions = DecodedExtensions
       };
 decode_handshake(?TLS_1_3, Tag, Msg) ->
     xtls_handshake_1_3:decode_handshake(Tag, Msg);
 decode_handshake(Version, Tag, Msg) ->
-    ssl_handshake:decode_handshake(Version, Tag, Msg).
+    xssl_handshake:decode_handshake(Version, Tag, Msg).
 
 get_signature_ext(Ext, HelloExt, ?TLS_1_2) ->
     case maps:get(Ext, HelloExt, undefined) of

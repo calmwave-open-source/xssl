@@ -200,7 +200,7 @@ initial_hello({call, From}, {start, Timeout},
     Packages = maps:get(active_n, PS),
     xdtls_socket:setopts(Transport, Socket, [{active,Packages}]),
     CertKeyPairs = xssl_certificate:available_cert_key_pairs(CertKeyAlts),
-    Session = ssl_session:client_select_session({Host, Port, SslOpts}, Cache,
+    Session = xssl_session:client_select_session({Host, Port, SslOpts}, Cache,
                                                 CacheCb, Session0, CertKeyPairs),
     Hello = xdtls_handshake:client_hello(Host, Port, ConnectionStates0, SslOpts,
 					Session#session.session_id, Renegotiation),
@@ -282,7 +282,7 @@ hello(internal, #hello_verify_request{cookie = Cookie},
         xdtls_gen_connection:prepare_flight(
           State0#state{handshake_env =
                            HsEnv#handshake_env{
-                             tls_handshake_history = ssl_handshake:init_handshake_history(),
+                             tls_handshake_history = xssl_handshake:init_handshake_history(),
                              stapling_state = StaplingState0#{ocsp_nonce => OcspNonce}}}),
     {State2, Actions} = xdtls_gen_connection:send_handshake(Hello, State1),
     State = State2#state{connection_env =
@@ -468,7 +468,7 @@ connection(internal, #hello_request{},
                  } = State0) ->
     #{current_cookie_secret := Cookie} = PS,
     CertKeyPairs = xssl_certificate:available_cert_key_pairs(CertKeyAlts),
-    Session = ssl_session:client_select_session({Host, Port, SslOpts}, Cache, CacheCb,
+    Session = xssl_session:client_select_session({Host, Port, SslOpts}, Cache, CacheCb,
                                                 Session0, CertKeyPairs),
     Hello = xdtls_handshake:client_hello(Host, Port, Cookie, ConnectionStates0, SslOpts,
 					Session#session.session_id, Renegotiation, undefined),

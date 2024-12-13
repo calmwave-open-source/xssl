@@ -186,7 +186,7 @@ initial_hello({call, From}, {start, Timeout},
               #state{protocol_specific = PS0, recv = Recv} = State) ->
     PS = PS0#{current_cookie_secret => xdtls_v1:cookie_secret(),
               previous_cookie_secret => <<>>},
-    erlang:send_after(dtls_v1:cookie_timeout(), self(), new_cookie_secret),
+    erlang:send_after(xdtls_v1:cookie_timeout(), self(), new_cookie_secret),
     xdtls_gen_connection:next_event(hello, no_record,
                                    State#state{recv = Recv#recv{from = From},
                                                protocol_specific = PS},
@@ -250,7 +250,7 @@ hello(internal, #client_hello{cookie = <<>>,
             {State, Actions} = xdtls_gen_connection:send_handshake(VerifyRequest, State2),
             #state{handshake_env = HsEnv} = State,
             NewHSEnv = HsEnv#handshake_env{tls_handshake_history =
-                                               ssl_handshake:init_handshake_history()},
+                                               xssl_handshake:init_handshake_history()},
             xdtls_gen_connection:next_event(hello, no_record,
                                            State#state{handshake_env = NewHSEnv}, Actions)
     catch throw:#alert{} = Alert ->
@@ -584,7 +584,7 @@ gen_state(StateName, Type, Event, State) ->
     end.
 
 renegotiate(State0) ->
-    HelloRequest = ssl_handshake:hello_request(),
+    HelloRequest = xssl_handshake:hello_request(),
     State1 = xdtls_gen_connection:prepare_flight(State0),
     xdtls_gen_connection:send_handshake(HelloRequest, State1).
 

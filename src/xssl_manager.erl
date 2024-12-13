@@ -421,7 +421,7 @@ cast(Msg) ->
     gen_server:cast(get(xssl_manager), Msg).
  
 validate_session(Host, Port, Session, LifeTime) ->
-    case ssl_session:valid_session(Session, LifeTime) of
+    case xssl_session:valid_session(Session, LifeTime) of
 	true ->
 	    ok;
 	false ->
@@ -429,7 +429,7 @@ validate_session(Host, Port, Session, LifeTime) ->
     end.
 
 validate_session(Port, Session, LifeTime) ->
-    case ssl_session:valid_session(Session, LifeTime) of
+    case xssl_session:valid_session(Session, LifeTime) of
 	true ->
 	    ok;
 	false ->

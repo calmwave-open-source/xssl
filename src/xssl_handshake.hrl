@@ -24,8 +24,8 @@
 %% see RFC 5246. Also includes supported hello extensions.
 %%----------------------------------------------------------------------
 
--ifndef(ssl_handshake).
--define(ssl_handshake, true).
+-ifndef(xssl_handshake).
+-define(xssl_handshake, true).
 
 -include_lib("public_key/include/public_key.hrl").
 
@@ -488,4 +488,4 @@
 
 -record(signature_algorithms_cert, {signature_scheme_list}).
 
--endif. % -ifdef(ssl_handshake).
+-endif. % -ifdef(xssl_handshake).
