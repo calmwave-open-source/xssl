@@ -5030,7 +5030,7 @@ binary_cipher_suites(Versions, Ciphers0)  ->
     binary_cipher_suites(Versions, Ciphers).
 
 default_binary_suites(exclusive, Version) ->
-    xssl_cipher:filter_suites(tls_v1:exclusive_suites(Version));
+    xssl_cipher:filter_suites(xtls_v1:exclusive_suites(Version));
 default_binary_suites(default, Version) ->
     xssl_cipher:filter_suites(xssl_cipher:suites(Version)).
 

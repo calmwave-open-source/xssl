@@ -117,7 +117,7 @@ MODULES= \
 	xtls_server_sup\
 	xtls_socket \
 	xtls_sup \
-	tls_v1
+	xtls_v1
 
 
 INTERNAL_HRL_FILES = \
