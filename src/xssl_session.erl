@@ -115,14 +115,14 @@ client_select_session({_, _, #{versions := Versions,
 %%              for the client hello message.
 %%--------------------------------------------------------------------
 server_select_session(_, SessIdTracker, ?EMPTY_ID, _SslOpts, _CertKeyPairs) ->
-    {ssl_server_session_cache:new_session_id(SessIdTracker), undefined};
+    {xssl_server_session_cache:new_session_id(SessIdTracker), undefined};
 server_select_session(_, SessIdTracker, SuggestedId, Options, CertKeyPairs) ->
     case is_resumable(SuggestedId, SessIdTracker, Options, CertKeyPairs)
     of
 	{true, Resumed} ->
 	    {SuggestedId, Resumed};
 	{false, undefined} ->
-            Id = ssl_server_session_cache:new_session_id(SessIdTracker),
+            Id = xssl_server_session_cache:new_session_id(SessIdTracker),
             {Id, undefined}
     end.
 
@@ -198,7 +198,7 @@ is_resumable(_, _, #{reuse_sessions := false}, _) ->
     {false, undefined};
 is_resumable(SuggestedSessionId, SessIdTracker,
              #{reuse_session := ReuseFun} = Options,  OwnCertKeyPairs) ->
-    case ssl_server_session_cache:reuse_session(SessIdTracker, SuggestedSessionId) of
+    case xssl_server_session_cache:reuse_session(SessIdTracker, SuggestedSessionId) of
 	#session{cipher_suite = CipherSuite,
                  own_certificates =  [SessionOwnCert | _],
 		 is_resumable = IsResumable,

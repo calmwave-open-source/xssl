@@ -238,7 +238,7 @@ start(internal, #client_hello{}, State0) -> %% Missing mandantory TLS-1.3 extens
     %% so it is a previous version hello.
     xssl_gen_statem:handle_own_alert(?ALERT_REC(?FATAL, ?PROTOCOL_VERSION), ?STATE(start), State0);
 start(info, Msg, State) ->
-    xtlsxtls_gen_connection:handle_info(Msg, ?STATE(start), State);
+    xtls_gen_connection:handle_info(Msg, ?STATE(start), State);
 start(Type, Msg, State) ->
     xssl_gen_statem:handle_common_event(Type, Msg, ?STATE(start), State).
 

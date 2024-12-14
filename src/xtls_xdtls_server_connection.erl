@@ -447,7 +447,7 @@ resumed_server_hello(#state{session = Session,
 	    State1 = State0#state{connection_states = ConnectionStates1,
 				  session = Session},
 	    {State, Actions} =
-		xtls_dxtls_gen_connection:finalize_handshake(State1, abbreviated, Connection),
+		xtls_xdtls_gen_connection:finalize_handshake(State1, abbreviated, Connection),
 	    Connection:next_event(abbreviated, no_record, State, Actions);
 	#alert{} = Alert ->
             throw(Alert)

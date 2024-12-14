@@ -95,7 +95,7 @@ MODULES= \
 	xtls_bloom_filter \
 	xtls_dtls_client_connection \
 	xtls_dtls_server_connection \
-	xtls_dxtls_gen_connection \
+	xtls_xdtls_gen_connection \
 	xtls_server_connection \
 	xtls_client_connection \
 	xtls_connection_sup \
